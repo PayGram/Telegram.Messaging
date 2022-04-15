@@ -1,38 +1,27 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Migrations\20200328063239_mig19.cs" />
-    <Compile Remove="Migrations\20200328063239_mig19.Designer.cs" />
-    <Compile Remove="Migrations\20200910143947_mess1.cs" />
-    <Compile Remove="Migrations\20200910143947_mess1.Designer.cs" />
-    <Compile Remove="Migrations\20200912083304_msg1.cs" />
-    <Compile Remove="Migrations\20200912083304_msg1.Designer.cs" />
-    <Compile Remove="Migrations\20200928042726_m7.cs" />
-    <Compile Remove="Migrations\20200928042726_m7.Designer.cs" />
-    <Compile Remove="Migrations\20200928043259_msg5.cs" />
-    <Compile Remove="Migrations\20200928043259_msg5.Designer.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="log4net" Version="2.0.11" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.7" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.7" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.7">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="3.1.7" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.7" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.7.0" />
+    <PackageReference Include="log4net" Version="2.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
+    <PackageReference Include="Telegram.Bot" Version="17.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Utilities\Utilities.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Migrations\" />
+  </ItemGroup>
 
 </Project>

@@ -81,7 +81,7 @@ namespace Telegram.Messaging.Types
 			return true;
 		}
 
-		public T GetAnswer<T>()
+		public T? GetAnswer<T>()
 		{
 			if (IsValidAnswer == false) return default;
 

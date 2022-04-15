@@ -20,7 +20,7 @@ namespace Telegram.Messaging.Db
 		/// This the Message Id assigned by telegram to our sent message.
 		/// It is null as long as the message hasn't been sent and hence we don't have an ID 
 		/// </summary>
-		public long? TelegramMessageId { get; set; }
+		public int? TelegramMessageId { get; set; }
 		public long TelegramUserId { get; set; }
 		public bool IsActive { get; set; }
 		public bool IsCancelled { get; set; }
@@ -40,7 +40,7 @@ namespace Telegram.Messaging.Db
 		/// Retrieves the most recent Active  and not Completed survey or null if there is not 
 		/// </summary>
 		/// <returns></returns>
-		public static async Task<Survey> GetCurrentSurvey(long telegramUserId)
+		public static async Task<Survey?> GetCurrentSurvey(long telegramUserId)
 		{
 			using (var db = new MessagingDb())
 			{
@@ -60,7 +60,7 @@ namespace Telegram.Messaging.Db
 		/// Retrieves the most recent Completed survey or null if there is not 
 		/// </summary>
 		/// <returns></returns>
-		public static async Task<Survey> GetRecentCompletedSurvey(long telegramUserId)
+		public static async Task<Survey?> GetRecentCompletedSurvey(long telegramUserId)
 		{
 			using (var db = new MessagingDb())
 			{
@@ -79,7 +79,7 @@ namespace Telegram.Messaging.Db
 		/// Retrieves the Survey through the answer id
 		/// </summary>
 		/// <returns></returns>
-		public static async Task<Survey> GetSurveyByQuestionId(int questionId)
+		public static async Task<Survey?> GetSurveyByQuestionId(int questionId)
 		{
 			using (var db = new MessagingDb())
 			{
@@ -100,7 +100,7 @@ namespace Telegram.Messaging.Db
 		/// </summary>
 		/// <param name="tid">The user to whom the survey was shown</param>
 		/// <returns></returns>
-		public static async Task<Survey> GetMostRecent(int tid)
+		public static async Task<Survey?> GetMostRecent(long tid)
 		{
 			using (var db = new MessagingDb())
 			{
@@ -120,7 +120,7 @@ namespace Telegram.Messaging.Db
 		/// <param name="telegramMessageId"></param>
 		/// <param name="userId"></param>
 		/// <returns></returns>
-		public static async Task<Survey> AddSurvey(long? telegramMessageId, long userId)
+		public static async Task<Survey?> AddSurvey(int? telegramMessageId, long userId)
 		{
 			using (var db = new MessagingDb())
 			{
@@ -162,7 +162,7 @@ namespace Telegram.Messaging.Db
 			}
 		}
 
-		public Question MostRecentQuestion
+		public Question? MostRecentQuestion
 		{
 			get
 			{

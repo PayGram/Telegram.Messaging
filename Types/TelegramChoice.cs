@@ -52,7 +52,7 @@ namespace Telegram.Messaging.Types
 		/// Creates a new default answer where the label and the value are the same
 		/// </summary>
 		/// <param name="label">The displayed label and the value associated with this answer. If null is passed, an ArgumentNullException is thrown</param>
-		public TelegramChoice(string label)
+		public TelegramChoice(string? label)
 			: this(label, label, null)
 		{
 
@@ -64,7 +64,7 @@ namespace Telegram.Messaging.Types
 		/// <param name="label">The displayed label of this answer</param>
 		/// <param name="value">The value associated with this answer. If null is passed, an ArgumentNullException is thrown</param>
 		/// <param name="param">The parameter assigned to this choice. If parameter is set, and Label is formattable, label will be formatted with the parameter</param>
-		public TelegramChoice(string label, string value, string param = null)
+		public TelegramChoice(string? label, string? value, string? param = null)
 		{
 			Value = value;
 			Label = label;
@@ -95,7 +95,7 @@ namespace Telegram.Messaging.Types
 		/// <param name="obj">If the passed object is a string, it will be compared against the value of this DefaultAnswer. 
 		/// Otherwise, if the passed object is a DefaultAnswer the passed DefaultAnswer.Value will be compared against this.Value</param>
 		/// <returns></returns>
-		public override bool Equals(object obj)
+		public override bool Equals(object? obj)
 		{
 			if (obj == null) return false;
 
@@ -127,7 +127,7 @@ namespace Telegram.Messaging.Types
 			return j;
 		}
 
-		public static TelegramChoice FromJsonSpecial(string json)
+		public static TelegramChoice? FromJsonSpecial(string? json)
 		{
 			TelegramChoice tc = JsonConvertExt.DeserializeObject<TelegramChoice>(json);
 			if (tc == null) return null;
@@ -145,14 +145,14 @@ namespace Telegram.Messaging.Types
 		public const char ESCAPED_SPACE = '\t';
 		public const char ESCAPED_UNDER = '\u001B';
 
-		public static string EscapeCommandValue(string value)
+		public static string EscapeCommandValue(string? value)
 		{
 			if (string.IsNullOrWhiteSpace(value)) return null;
 
 			return value.Replace(PARAMS_SPACE_SEP, ESCAPED_SPACE).Replace(PARAMS_UNDER_SEP, ESCAPED_UNDER);
 		}
 
-		public static string UnEscapeCommandValue(string value)
+		public static string UnEscapeCommandValue(string? value)
 		{
 			if (string.IsNullOrWhiteSpace(value)) return null;
 

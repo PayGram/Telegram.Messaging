@@ -31,11 +31,11 @@ namespace Telegram.Messaging.Db
 		public DateTime CreatedUtc { get; set; }
 		public string QuestionText { get; set; }
 		public int InternalId { get; set; }
-		public string FollowUp { get; set; }
+		public string? FollowUp { get; set; }
 		public int MaxButtonsPerRow { get; set; }
 		[StringLength(10)]
-		public string FollowUpSeparator { get; set; }
-		public string Answers
+		public string? FollowUpSeparator { get; set; }
+		public string? Answers
 		{
 			get { return _telegramAnswers.Count > 0 ? JsonConvert.SerializeObject(_telegramAnswers) : null; }
 			set
@@ -44,12 +44,12 @@ namespace Telegram.Messaging.Db
 				_telegramAnswers.ForEach(x => x.AnsweredQuestion = this);
 			}
 		}
-		public string Constraints
+		public string? Constraints
 		{
 			get { return TelegramConstraints.Count > 0 ? JsonConvertExt.SerializeIgnoreAndPopulate(TelegramConstraints) : null; }
 			set { TelegramConstraints = JsonConvertExt.DeserializeObject<List<TelegramConstraint>>(value) ?? TelegramConstraints; }
 		}
-		public string DefaultAnswers
+		public string? DefaultAnswers
 		{
 			get { return _defaultAnswersList.Count > 0 ? JsonConvertExt.SerializeIgnoreAndPopulate(_defaultAnswersList) : null; }
 			set { _defaultAnswersList = JsonConvertExt.DeserializeObject<List<TelegramChoice>>(value) ?? _defaultAnswersList; }
@@ -77,7 +77,7 @@ namespace Telegram.Messaging.Db
 		/// <summary>
 		/// A string representation of CallbackHandler
 		/// </summary>
-		public string CallbackHandlerAssemblyName
+		public string? CallbackHandlerAssemblyName
 		{
 			get
 			{
@@ -99,7 +99,7 @@ namespace Telegram.Messaging.Db
 			}
 		}
 
-		Action<MessagingEventArgs> _onEvent;
+		AsyncEventHandler<MessagingEventArgs> _onEventAsync;
 		/// <summary>
 		/// The action to call when there is an event associated to this question.
 		/// The target object must be of type <see cref="IQuestionAnswerCallbackHandler"/>, otherwise the action should refer a static method
@@ -107,33 +107,33 @@ namespace Telegram.Messaging.Db
 		/// This property is not related to CallbackHandler, but target objects are the same
 		/// </summary>
 		[NotMapped]
-		public Action<MessagingEventArgs> OnEvent
+		public AsyncEventHandler<MessagingEventArgs> OnEventAsync
 		{
-			get => _onEvent;
+			get => _onEventAsync;
 			set
 			{
-				if (value == null) { _onEvent = null; return; }
+				if (value == null) { _onEventAsync = null; return; }
 				if (value.Target != null && typeof(IQuestionAnswerCallbackHandler).IsAssignableFrom(value.Target.GetType()) == false)
-					throw new InvalidParameterException($"OnEvent target must implement interface {nameof(IQuestionAnswerCallbackHandler)}");
-				_onEvent = value;
+					throw new ArgumentException($"OnEvent target must implement interface {nameof(IQuestionAnswerCallbackHandler)}");
+				_onEventAsync = value;
 			}
 		}
 
 		/// <summary>
 		/// A string representation of OnEvent
 		/// </summary>
-		public string MethodNameOnEvent
+		public string? MethodNameOnEvent
 		{
 			get
 			{
-				if (_onEvent == null) return null;
-				return _onEvent.Method.DeclaringType.AssemblyQualifiedName + "`" + _onEvent.Method.IsStatic + "`" + _onEvent.Method.Name;
+				if (_onEventAsync == null) return null;
+				return _onEventAsync.Method.DeclaringType?.AssemblyQualifiedName + "`" + _onEventAsync.Method.IsStatic + "`" + _onEventAsync.Method.Name;
 			}
 			set
 			{
 				if (string.IsNullOrWhiteSpace(value))
 				{
-					_onEvent = null;
+					_onEventAsync = null;
 					return;
 				}
 				string[] typeAndMethod = value.Split(new char[] { '`' });
@@ -151,12 +151,12 @@ namespace Telegram.Messaging.Db
 				{
 					if (isStatic)
 					{
-						_onEvent = (Action<MessagingEventArgs>)Action.CreateDelegate(typeof(Action<MessagingEventArgs>), t, method);
+						_onEventAsync = (AsyncEventHandler<MessagingEventArgs>)Delegate.CreateDelegate(typeof(AsyncEventHandler<MessagingEventArgs>), t, method);
 					}
 					else
 					{
 						object target = Activator.CreateInstance(t);
-						_onEvent = (Action<MessagingEventArgs>)Action.CreateDelegate(typeof(Action<MessagingEventArgs>), target, method);
+						_onEventAsync = (AsyncEventHandler<MessagingEventArgs>)Delegate.CreateDelegate(typeof(AsyncEventHandler<MessagingEventArgs>), target, method);
 					}
 				}
 				catch (Exception ex)
@@ -174,7 +174,7 @@ namespace Telegram.Messaging.Db
 			//private set => _defaultAnswersList = value != null? : _defaultAnswersList ;
 		}
 		[NotMapped]
-		public TelegramAnswer LastAnswer { get { return _telegramAnswers.Count == 0 ? null : _telegramAnswers[_telegramAnswers.Count - 1]; } }
+		public TelegramAnswer? LastAnswer { get { return _telegramAnswers.Count == 0 ? null : _telegramAnswers[_telegramAnswers.Count - 1]; } }
 		[NotMapped]
 		public TelegramAnswer[] TelegramAnswers { get => _telegramAnswers.ToArray(); }
 		List<TelegramAnswer> _telegramAnswers;
@@ -239,7 +239,7 @@ namespace Telegram.Messaging.Db
 		/// Adds an answer to the answers of this questions. If the answer.Question != null or this questions contains already this answer, null will be returned.
 		/// Constraints are enforced before adding it to the list and IsCompleted is set to the EnforceConstraints result
 		/// </summary>
-		public TelegramAnswer AddAnswer(TelegramAnswer answer)
+		public TelegramAnswer? AddAnswer(TelegramAnswer answer)
 		{
 			if (answer == null || answer.AnsweredQuestion != this) return null;
 
@@ -384,7 +384,7 @@ namespace Telegram.Messaging.Db
 		/// </summary>
 		/// <param name="tid"></param>
 		/// <returns></returns>
-		public static async Task<Question> GetMostRecentAsync(int tid)
+		public static async Task<Question?> GetMostRecentAsync(long tid)
 		{
 			try
 			{
@@ -407,7 +407,7 @@ namespace Telegram.Messaging.Db
 		/// </summary>
 		/// <param name="tid"></param>
 		/// <returns></returns>
-		public static Question GetMostRecent(int tid)
+		public static Question? GetMostRecent(long tid)
 		{
 			try
 			{

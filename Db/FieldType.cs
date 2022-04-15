@@ -12,7 +12,7 @@ namespace Telegram.Messaging.Db
 		public FieldTypes Id { get; set; }
 		public string Name { get; set; }
 
-		public static async Task<FieldType> CreateOrGet(string name)
+		public static async Task<FieldType?> CreateOrGet(string name)
 		{
 			using (var db = new MessagingDb())
 			{
