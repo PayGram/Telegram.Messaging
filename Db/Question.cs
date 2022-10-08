@@ -1,13 +1,8 @@
 ﻿using log4net;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Threading.Tasks;
-using Telegram.Bot.Exceptions;
 using Telegram.Messaging.CallbackHandlers;
 using Telegram.Messaging.Messaging;
 using Telegram.Messaging.Types;
@@ -256,37 +251,33 @@ namespace Telegram.Messaging.Db
 		/// <returns></returns>
 		public async Task UpdateQuestion()
 		{
-			using (var db = new MessagingDb())
+			using var db = new MessagingDb();
+			try
 			{
-				try
-				{
-					db.Attach(this);
-					var entry = db.Entry(this);
-					if (entry.State != EntityState.Added)
-						entry.State = EntityState.Modified;
-					int k = await db.SaveChangesAsync();
-				}
-				catch (Exception ex)
-				{
-					log.Debug($"Error updating Question {this.QuestionText}", ex);
-				}
+				db.Attach(this);
+				var entry = db.Entry(this);
+				if (entry.State != EntityState.Added)
+					entry.State = EntityState.Modified;
+				int k = await db.SaveChangesAsync().ConfigureAwait(false);
+			}
+			catch (Exception ex)
+			{
+				log.Error($"Error updating Question {this.QuestionText}", ex);
 			}
 		}
 
 		internal async Task Delete()
 		{
-			using (var db = new MessagingDb())
+			using var db = new MessagingDb();
+			try
 			{
-				try
-				{
-					db.Entry(this).State = EntityState.Deleted;
-					db.Questions.Remove(this);
-					await db.SaveChangesAsync();
-				}
-				catch (Exception ex)
-				{
-					log.Debug($"Error deleting Question {this.QuestionText}", ex);
-				}
+				db.Entry(this).State = EntityState.Deleted;
+				db.Questions.Remove(this);
+				await db.SaveChangesAsync().ConfigureAwait(false);
+			}
+			catch (Exception ex)
+			{
+				log.Error($"Error deleting Question {this.QuestionText}", ex);
 			}
 		}
 
