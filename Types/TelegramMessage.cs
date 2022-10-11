@@ -1,6 +1,4 @@
 ﻿using log4net;
-using System;
-using System.Linq;
 using Telegram.Bot.Types;
 
 namespace Telegram.Messaging.Types

@@ -2,16 +2,16 @@
 
 namespace Telegram.Messaging.Migrations
 {
-    public partial class mig19 : Migration
-    {
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+	public partial class mig19 : Migration
+	{
+		protected override void Up(MigrationBuilder migrationBuilder)
+		{
 
-        }
+		}
 
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+		protected override void Down(MigrationBuilder migrationBuilder)
+		{
 
-        }
-    }
+		}
+	}
 }

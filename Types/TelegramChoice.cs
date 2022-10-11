@@ -1,6 +1,4 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Linq;
 using Utilities.String.Json.Extentions;
 using JsonIgnoreAttribute = Newtonsoft.Json.JsonIgnoreAttribute;
 

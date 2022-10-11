@@ -7,5 +7,9 @@ namespace Telegram.Messaging.Messaging
 	{
 		public Question AnsweredQuestion { get; internal set; }
 		public TelegramAnswer Answer { get; internal set; }
+		public QuestionAnsweredEventArgs() : base(MessageEventTypes.QuestionAnswered)
+		{
+
+		}
 	}
 }

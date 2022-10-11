@@ -1,5 +1,4 @@
-﻿using System;
-using System.Globalization;
+﻿using System.Globalization;
 using Telegram.Messaging.Db;
 
 namespace Telegram.Messaging.Types

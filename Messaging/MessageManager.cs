@@ -61,7 +61,6 @@ namespace Telegram.Messaging.Messaging
         public event EventHandler<ChangePageEventArgs> OnPageChanged;
         public event EventHandler<SurveyCancelledEventArgs> OnSurveyCancelled;
 
-
         public event EventHandler<SurveyCompletedEventArgs> OnSurveyCompleted;
         public event EventHandler<PayReceivedEventArgs> OnPayPressed;
         public event EventHandler<InvalidInteractionEventArgs> OnInvalidInteraction;

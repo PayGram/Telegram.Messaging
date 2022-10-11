@@ -8,5 +8,9 @@ namespace Telegram.Messaging.Messaging
 		public TelegramMessage TelegramMessage { get; internal set; }
 		public int Value { get; set; }
 		public Question OriginatingQuestion { get; internal set; }
+		public DiceRolledEventArgs() : base(MessageEventTypes.DiceRolled)
+		{
+
+		}
 	}
 }
