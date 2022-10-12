@@ -13,7 +13,6 @@ namespace Telegram.Messaging.Db
 	public class Question
 	{
 		readonly static ILog log = LogManager.GetLogger(typeof(Question));
-
 		public int SurveyId { get; set; }
 		public Survey Survey { get; set; }
 		public int Id { get; set; }
@@ -49,7 +48,6 @@ namespace Telegram.Messaging.Db
 			get { return _defaultAnswersList.Count > 0 ? JsonConvertExt.SerializeIgnoreAndPopulate(_defaultAnswersList) : null; }
 			set { _defaultAnswersList = JsonConvertExt.DeserializeObject<List<TelegramChoice>>(value) ?? _defaultAnswersList; }
 		}
-
 		Type _callbackHandler;
 		/// <summary>
 		/// This type will be instanciated and events called accordignly on the target.
@@ -100,6 +98,7 @@ namespace Telegram.Messaging.Db
 		/// The target object must be of type <see cref="IQuestionAnswerCallbackHandler"/>, otherwise the action should refer a static method
 		/// When used in a MessageManager, only one target object will be created, so information set in the target object will be persistent between calls.
 		/// This property is not related to CallbackHandler, but target objects are the same
+		/// Do not add multiple methods with +=, only the last one will be triggered
 		/// </summary>
 		[NotMapped]
 		public AsyncEventHandler<MessagingEventArgs> OnEventAsync
