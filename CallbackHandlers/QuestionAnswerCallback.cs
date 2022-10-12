@@ -15,5 +15,9 @@ namespace Telegram.Messaging.CallbackHandlers
 		public virtual async Task OnSurveyCompletedAsync(MessageManager mngr, SurveyCompletedEventArgs e) { }
 		public virtual async Task OnPayPressedAsync(MessageManager mngr, PayReceivedEventArgs e) { }
 		public virtual async Task OnInvalidInteractionAsync(MessageManager mngr, InvalidInteractionEventArgs e) { }
+		public QuestionAnswerCallbackHandler(MessageManager manager)
+		{
+			Manager = manager;
+		}
 	}
 }
