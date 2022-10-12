@@ -184,7 +184,7 @@ namespace Telegram.Messaging.Messaging
 			lock (syncHndlrs)
 			{
 				if (callBackhandlers.ContainsKey(skey)) return callBackhandlers[skey] as QuestionAnswerCallbackHandler;
-				var callbackHandler = Activator.CreateInstance(key) as QuestionAnswerCallbackHandler;
+				var callbackHandler = Activator.CreateInstance(key, this) as QuestionAnswerCallbackHandler;
 				callbackHandler.Manager = this;
 				callBackhandlers.Add(skey, callbackHandler);
 				return callbackHandler;
