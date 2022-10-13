@@ -38,7 +38,7 @@ namespace Telegram.Messaging.Db
 			{
 				optionsBuilder.EnableDetailedErrors();
 				optionsBuilder.EnableSensitiveDataLogging();
-				string conn = null;
+				string? conn = null;
 				var connString = System.Configuration.ConfigurationManager.ConnectionStrings[DATABASE_NAME];
 				if (connString != null)
 					conn = connString.ConnectionString;
