@@ -17,11 +17,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Utilities\Utilities.csproj" />
+    <Folder Include="Migrations\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Migrations\" />
+    <Reference Include="Utilities">
+      <HintPath>..\Utilities\bin\$(Configuration)\net6.0\Utilities.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
