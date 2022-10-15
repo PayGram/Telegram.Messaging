@@ -1,0 +1,2 @@
+﻿! SendQuestion answers the callbacks but it can happen that when the question is sent twice, the callback is retried to be answered.
+- remove the synchronization mechanism on question sending and leave up to the caller the synchronization 

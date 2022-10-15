@@ -1278,7 +1278,7 @@ namespace Telegram.Messaging.Messaging
 				if (currQuestion.InternalId == lastQuestionAsked.InternalId && currQuestion.SurveyId == lastQuestionAsked.SurveyId)
 				{
 					log.Debug($"{this}. really updating question {currQuestion}.");
-					await doSendQuestion(tClient, this, currQuestion, true, false);
+					await doSendQuestion(tClient, this, currQuestion, true);
 				}
 				else
 					log.Debug($"{this}. don't update shown question because, {currQuestion.InternalId} != {lastQuestionAsked.InternalId}");
@@ -1325,7 +1325,7 @@ namespace Telegram.Messaging.Messaging
 
 			try
 			{
-				return await doSendQuestion(tClient, this, question, false, CurrentMessage.IsCallbackQuery);
+				return await doSendQuestion(tClient, this, question, false);
 			}
 			catch (Exception e)
 			{
@@ -1347,9 +1347,9 @@ namespace Telegram.Messaging.Messaging
 		/// <param name="updating"></param>
 		/// <param name="isCallbackQuery"></param>
 		/// <returns></returns>
-		private static async Task<Message?> doSendQuestion(ITelegramBotClient tClient, MessageManager mngr, Question question, bool updating, bool isCallbackQuery)
+		private static async Task<Message?> doSendQuestion(ITelegramBotClient tClient, MessageManager mngr, Question question, bool updating)
 		{
-			log.Debug($"Send question {mngr}, updating: {updating}, iscallback: {isCallbackQuery}, {question}");
+			log.Debug($"Send question {mngr}, updating: {updating}, {question}");
 			if (mngr == null)
 			{
 				log.Debug($"{mngr}. mngr is null");

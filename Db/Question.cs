@@ -101,6 +101,7 @@ namespace Telegram.Messaging.Db
 		/// Do not add multiple methods with +=, only the last one will be triggered
 		/// The target object is not guaranteed to be persistent after serialization and deserialization. 
 		/// Use <see cref="MessageManager.GetHandler(Type)"/> to persist the target
+		/// The target method MUST be public
 		/// </summary>
 		[NotMapped]
 		public AsyncEventHandler<MessagingEventArgs> OnEventAsync
