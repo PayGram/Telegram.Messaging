@@ -1,4 +1,6 @@
 ﻿using log4net;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.Diagnostics;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
@@ -191,7 +193,7 @@ namespace Telegram.Messaging.Messaging
 			{
 				if (callBackhandlers.ContainsKey(skey)) return callBackhandlers[skey] as QuestionAnswerCallbackHandler;
 				var callbackHandler = Activator.CreateInstance(key, this) as QuestionAnswerCallbackHandler;
-				callbackHandler.Manager = this;
+				//callbackHandler.Manager = this;
 				callBackhandlers.Add(skey, callbackHandler);
 				return callbackHandler;
 			}
@@ -208,9 +210,11 @@ namespace Telegram.Messaging.Messaging
 			if (forAction == null) return null;
 			if (forAction.Method.IsStatic) return forAction;
 
-			string skey = forAction.Method.DeclaringType.ToString();
-			IQuestionAnswerCallbackHandler target = null;
-			AsyncEventHandler<MessagingEventArgs> toret = null;
+			string? skey = forAction.Method.DeclaringType?.ToString();
+			if (skey == null) return null;
+
+			IQuestionAnswerCallbackHandler target;
+			AsyncEventHandler<MessagingEventArgs> toret;
 			lock (syncHndlrs)
 			{
 				if (callBackhandlers.ContainsKey(skey))
@@ -223,9 +227,13 @@ namespace Telegram.Messaging.Messaging
 				else
 				{
 					// we don't have a target-handler for this action, we can add the target to our list of handlers
-					// so next time we will use it
+					// so next time we will use it, but first we must check that this target is not a dummy (see Question.MethodNameOnEvent)
 					target = (IQuestionAnswerCallbackHandler)forAction.Target;
-					target.Manager = this;
+					if (target.Manager == null)//dummy, drop it
+					{
+						target = Activator.CreateInstance(forAction.Method.DeclaringType, this) as QuestionAnswerCallbackHandler;
+						//target.Manager = this;
+					}
 					callBackhandlers.Add(skey, target);
 					toret = forAction;
 				}
@@ -1436,7 +1444,10 @@ namespace Telegram.Messaging.Messaging
 			catch (ApiRequestException ar)
 			{
 				if (ar.Message.Contains("message is not modified"))
+				{
 					messageNotModified = true;
+					Debug.WriteLine("message is not modified");
+				}
 				else
 					log.Debug($"{mngr}", ar);
 			}
