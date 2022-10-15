@@ -13,7 +13,7 @@ using Utilities.String.Json.Extentions;
 namespace Telegram.Messaging.Messaging
 {
 	public delegate Task AsyncEventHandler<TEventArgs>(object sender, TEventArgs e);
-
+	
 	public class MessageManager
 	{
 		static readonly ILog log = LogManager.GetLogger(typeof(MessageManager));
@@ -106,6 +106,12 @@ namespace Telegram.Messaging.Messaging
 			tClient = client ?? new TelegramBotClient(botToken);
 			_tid = userId;
 			setEventsCallback();
+		}
+		/// <summary>
+		/// Initializes an empty MessageManager
+		/// </summary>
+		internal MessageManager()
+		{ 
 		}
 
 		void setEventsCallback()

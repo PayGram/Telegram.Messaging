@@ -99,6 +99,8 @@ namespace Telegram.Messaging.Db
 		/// When used in a MessageManager, only one target object will be created, so information set in the target object will be persistent between calls.
 		/// This property is not related to CallbackHandler, but target objects are the same
 		/// Do not add multiple methods with +=, only the last one will be triggered
+		/// The target object is not guaranteed to be persistent after serialization and deserialization. 
+		/// Use <see cref="MessageManager.GetHandler(Type)"/> to persist the target
 		/// </summary>
 		[NotMapped]
 		public AsyncEventHandler<MessagingEventArgs> OnEventAsync
@@ -149,8 +151,15 @@ namespace Telegram.Messaging.Db
 					}
 					else
 					{
-						object target = Activator.CreateInstance(t);
-						_onEventAsync = (AsyncEventHandler<MessagingEventArgs>)Delegate.CreateDelegate(typeof(AsyncEventHandler<MessagingEventArgs>), target, method);
+
+						/// <summary>
+						/// this dummy callback handler is used as a dummy target for the OnEventAsync when a static method is not used
+						/// this happens because when a question is serialized and then deserialized, the original target-object reference is lost.
+						/// What will happen is that the question is created and the dummy target assigned to the OnEventAsync; when the MessageManager
+						/// will invoke the events, it will replace the dummy target with the persisted target maintained by MessageManager
+						/// </summary>
+						object dummy = Activator.CreateInstance(t);
+						_onEventAsync = (AsyncEventHandler<MessagingEventArgs>)Delegate.CreateDelegate(typeof(AsyncEventHandler<MessagingEventArgs>), dummy, method);
 					}
 				}
 				catch (Exception ex)
@@ -174,6 +183,18 @@ namespace Telegram.Messaging.Db
 		List<TelegramAnswer> _telegramAnswers;
 		[NotMapped]
 		public List<TelegramConstraint> TelegramConstraints { get; set; }
+
+		//static Question()
+		//{
+		//	try
+		//	{
+		//		dummy = new QuestionAnswerCallbackHandler(new MessageManager(null, null));
+		//	}
+		//	catch (Exception e)
+		//	{ 
+		//	}
+
+		//}
 
 		public Question()
 		{
@@ -382,7 +403,7 @@ namespace Telegram.Messaging.Db
 				{
 					return await (from qs in db.Questions.Include(x => x.Survey)
 								  where qs.Survey.TelegramUserId == tid
-								  select qs).OrderByDescending(x => x.Id).FirstOrDefaultAsync().ConfigureAwait(false);
+								  select new Question()).OrderByDescending(x => x.Id).FirstOrDefaultAsync().ConfigureAwait(false);
 				}
 			}
 			catch (Exception e)
