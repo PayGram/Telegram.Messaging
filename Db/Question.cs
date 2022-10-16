@@ -404,7 +404,7 @@ namespace Telegram.Messaging.Db
 				{
 					return await (from qs in db.Questions.Include(x => x.Survey)
 								  where qs.Survey.TelegramUserId == tid
-								  select new Question()).OrderByDescending(x => x.Id).FirstOrDefaultAsync().ConfigureAwait(false);
+								  select qs).OrderByDescending(x => x.Id).FirstOrDefaultAsync().ConfigureAwait(false);
 				}
 			}
 			catch (Exception e)
