@@ -7,25 +7,33 @@ namespace Telegram.Messaging.Types
 
 	public class TelegramChoice
 	{
-		public static readonly TelegramChoice CancelAnswer = new TelegramChoice("Home", "__Cancel__");
-		public static readonly TelegramChoice SkipAnswer = new TelegramChoice("Skip", "__Skip__");
-		public static readonly TelegramChoice BackAnswer = new TelegramChoice("Back", "__Back__");
-		public static readonly TelegramChoice PayAnswer = new TelegramChoice("Pay", "__Pay__");
-		public static readonly TelegramChoice PrevPageAnswer = new TelegramChoice("Prev. Page", "__PrevPage__");
-		public static readonly TelegramChoice CurrPageAnswer = new TelegramChoice("Page {0}", "__CurrPage__");
-		public static readonly TelegramChoice NextPageAnswer = new TelegramChoice("Next. Page", "__NextPage__");
+		internal readonly static TelegramChoice _CancelAnswer = new TelegramChoice("Home", "__Cancel__");
+		internal readonly static TelegramChoice _SkipAnswer = new TelegramChoice("Skip", "__Skip__");
+		internal readonly static TelegramChoice _BackAnswer = new TelegramChoice("Back", "__Back__");
+		internal readonly static TelegramChoice _PayAnswer = new TelegramChoice("Pay", "__Pay__");
+		internal readonly static TelegramChoice _PrevPageAnswer = new TelegramChoice("Prev. Page", "__PrevPage__");
+		internal readonly static TelegramChoice _CurrPageAnswer = new TelegramChoice("Page {0}", "__CurrPage__");
+		internal readonly static TelegramChoice _NextPageAnswer = new TelegramChoice("Next. Page", "__NextPage__");
+		internal readonly static TelegramChoice _NewKeyboardLine = new TelegramChoice("", "__NewKeyboardLine__");
+		public static TelegramChoice CancelAnswer => new(_CancelAnswer);
+		public static TelegramChoice SkipAnswer => new(_SkipAnswer);
+		public static TelegramChoice BackAnswer => new(_BackAnswer);
+		public static TelegramChoice PayAnswer => new(_PayAnswer);
+		public static TelegramChoice PrevPageAnswer => new(_PrevPageAnswer);
+		public static TelegramChoice CurrPageAnswer => new(_CurrPageAnswer);
+		public static TelegramChoice NextPageAnswer => new(_NextPageAnswer);
+
 		/// <summary>
 		/// This choice will never be added on the keyboard. It is used as hint and when the keyboard builder finds it, 
 		/// it will add a new row. It is not considered a system choice.
 		/// </summary>
-		public static readonly TelegramChoice NewKeyboardLine = new TelegramChoice("", "__NewKeyboardLine__");
-		public static readonly TelegramChoice[] SystemChoices;
+		public static TelegramChoice NewKeyboardLine => new(_NewKeyboardLine);
+		internal static readonly TelegramChoice[] SystemChoices;
 
 		static TelegramChoice()
 		{
 			SystemChoices = new TelegramChoice[] { CancelAnswer, SkipAnswer, BackAnswer, PayAnswer, PrevPageAnswer, CurrPageAnswer, NextPageAnswer };
 		}
-
 		[JsonIgnore]
 		public bool IsSystemChoice { get => SystemChoices.Where(x => x.Equals(this)).Count() > 0; }
 
@@ -68,7 +76,7 @@ namespace Telegram.Messaging.Types
 			Label = label;
 			Param = param;
 			if (value == null)
-				throw new System.ArgumentNullException("Value of 'value' cannot be null @ DefaultAnswer");
+				throw new ArgumentNullException("Value of 'value' cannot be null @ DefaultAnswer");
 		}
 
 		/// <summary>
@@ -82,8 +90,7 @@ namespace Telegram.Messaging.Types
 
 		public TelegramChoice(TelegramChoice choice) : this(choice?.Label, choice?.Value, choice?.Param)
 		{
-			if (choice == null) throw new System.ArgumentNullException("Choice can't be null");
-
+			if (choice == null) throw new ArgumentNullException("Choice can't be null");
 		}
 
 		/// <summary>
@@ -156,6 +163,20 @@ namespace Telegram.Messaging.Types
 
 			string unesc = value.Replace(ESCAPED_SPACE, PARAMS_SPACE_SEP).Replace(ESCAPED_UNDER, PARAMS_UNDER_SEP);
 			return unesc;
+		}
+		public static bool operator ==(TelegramChoice? a, TelegramChoice? b)
+		{
+			if (a is null && b is null) return true;
+			return a?.Equals(b) == true; //a.Value==b.Value && a.Label==b.Label;	
+		}
+		public static bool operator !=(TelegramChoice? a, TelegramChoice? b)
+		{
+			if (a is null && b is null) return false;
+			return a?.Equals(b) == false;// a.Value != b.Value || a.Label != b.Label;
+		}
+		public override string ToString()
+		{
+			return $"QID:{QuestionId}:MID:{MessageId}:{Label}:{Value}";
 		}
 	}
 }

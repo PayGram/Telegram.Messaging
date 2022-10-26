@@ -15,7 +15,7 @@ using Utilities.String.Json.Extentions;
 namespace Telegram.Messaging.Messaging
 {
 	public delegate Task AsyncEventHandler<TEventArgs>(object sender, TEventArgs e);
-	
+
 	public class MessageManager
 	{
 		static readonly ILog log = LogManager.GetLogger(typeof(MessageManager));
@@ -113,7 +113,7 @@ namespace Telegram.Messaging.Messaging
 		/// Initializes an empty MessageManager
 		/// </summary>
 		internal MessageManager()
-		{ 
+		{
 		}
 
 		void setEventsCallback()
@@ -232,10 +232,11 @@ namespace Telegram.Messaging.Messaging
 					if (target.Manager == null)//dummy, drop it
 					{
 						target = Activator.CreateInstance(forAction.Method.DeclaringType, this) as QuestionAnswerCallbackHandler;
-						//target.Manager = this;
+						toret = (AsyncEventHandler<MessagingEventArgs>)Delegate.CreateDelegate(typeof(AsyncEventHandler<MessagingEventArgs>), target, forAction.Method); // we recreate a new one because the constructor might do some initializations that assigning the manager through the property wouldnt happens
 					}
+					else
+						toret = forAction;
 					callBackhandlers.Add(skey, target);
-					toret = forAction;
 				}
 			}
 			return toret;
@@ -731,9 +732,9 @@ namespace Telegram.Messaging.Messaging
 			}
 
 			TelegramChoice pickedChoice = answer?.PickedChoice;
-			bool HitCancel = TelegramChoice.CancelAnswer.Equals(answer.PickedChoice);
-			bool IsSkept = TelegramChoice.SkipAnswer.Equals(answer.PickedChoice);
-			bool HitBack = CurrentSurvey.Questions.Count > 1 && TelegramChoice.BackAnswer.Equals(answer.PickedChoice);
+			bool HitCancel = TelegramChoice._CancelAnswer.Equals(answer.PickedChoice);
+			bool IsSkept = TelegramChoice._SkipAnswer.Equals(answer.PickedChoice);
+			bool HitBack = CurrentSurvey.Questions.Count > 1 && TelegramChoice._BackAnswer.Equals(answer.PickedChoice);
 
 			if (HitBack)
 			{
@@ -773,22 +774,22 @@ namespace Telegram.Messaging.Messaging
 					answer.Answer = "";
 					await CancelSurvey();
 				}
-				else if (TelegramChoice.PayAnswer.Equals(answer.PickedChoice))
+				else if (TelegramChoice._PayAnswer.Equals(answer.PickedChoice))
 				{
 					mostRecent.IsCompleted = true;
 					await RaiseOnPayPressed(new PayReceivedEventArgs() { CurrentQuestion = mostRecent });
 				}
-				else if (TelegramChoice.CurrPageAnswer.Equals(answer.PickedChoice))
+				else if (TelegramChoice._CurrPageAnswer.Equals(answer.PickedChoice))
 				{
 					var currPage = pickedChoice != null ? int.Parse(pickedChoice.Param) : 0;
 					await RaiseOnPageChanged(new ChangePageEventArgs() { CurrentQuestion = mostRecent, CurrentPage = currPage, RequestedPage = currPage });
 				}
-				else if (TelegramChoice.NextPageAnswer.Equals(answer.PickedChoice))
+				else if (TelegramChoice._NextPageAnswer.Equals(answer.PickedChoice))
 				{
 					var currPage = pickedChoice != null ? int.Parse(pickedChoice.Param) : 0;
 					await RaiseOnPageChanged(new ChangePageEventArgs() { CurrentQuestion = mostRecent, CurrentPage = currPage, RequestedPage = currPage + 1 });
 				}
-				else if (TelegramChoice.PrevPageAnswer.Equals(answer.PickedChoice))
+				else if (TelegramChoice._PrevPageAnswer.Equals(answer.PickedChoice))
 				{
 					var currPage = pickedChoice != null ? int.Parse(pickedChoice.Param) : 0;
 					await RaiseOnPageChanged(new ChangePageEventArgs() { CurrentQuestion = mostRecent, CurrentPage = currPage, RequestedPage = currPage - 1 });
@@ -867,11 +868,11 @@ namespace Telegram.Messaging.Messaging
 
 			// back page, current page and next page should be placed on a new row at the end
 			if (hasPrevPage)
-				defAnswers.Add(new TelegramChoice(TelegramChoice.PrevPageAnswer) { Param = currentPage.ToString() });
+				defAnswers.Add(new TelegramChoice(TelegramChoice._PrevPageAnswer) { Param = currentPage.ToString() });
 			if (hasPrevPage || hasNextPage)
-				defAnswers.Add(new TelegramChoice(TelegramChoice.CurrPageAnswer) { Param = currentPage.ToString() });
+				defAnswers.Add(new TelegramChoice(TelegramChoice._CurrPageAnswer) { Param = currentPage.ToString() });
 			if (hasNextPage)
-				defAnswers.Add(new TelegramChoice(TelegramChoice.NextPageAnswer) { Param = currentPage.ToString() });
+				defAnswers.Add(new TelegramChoice(TelegramChoice._NextPageAnswer) { Param = currentPage.ToString() });
 
 			// back, cancel and skip should be at the end because they will be placed on a new row
 			if (showBack)
@@ -967,11 +968,11 @@ namespace Telegram.Messaging.Messaging
 
 			// back page, current page and next page should be placed on a new row at the end
 			if (hasPrevPage)
-				defAnswers.Add(new TelegramChoice(TelegramChoice.PrevPageAnswer) { Param = currentPage.ToString() });
+				defAnswers.Add(new TelegramChoice(TelegramChoice._PrevPageAnswer) { Param = currentPage.ToString() });
 			if (hasPrevPage || hasNextPage)
-				defAnswers.Add(new TelegramChoice(TelegramChoice.CurrPageAnswer) { Param = currentPage.ToString() });
+				defAnswers.Add(new TelegramChoice(TelegramChoice._CurrPageAnswer) { Param = currentPage.ToString() });
 			if (hasNextPage)
-				defAnswers.Add(new TelegramChoice(TelegramChoice.NextPageAnswer) { Param = currentPage.ToString() });
+				defAnswers.Add(new TelegramChoice(TelegramChoice._NextPageAnswer) { Param = currentPage.ToString() });
 
 			// back, cancel and skip should be at the end because they will be placed on a new row
 			if (showBack)
@@ -1139,7 +1140,7 @@ namespace Telegram.Messaging.Messaging
 			int numOfEl = 1;
 			foreach (TelegramChoice a in onlyChoices)
 			{
-				if (a.Equals(TelegramChoice.NewKeyboardLine))
+				if (a.Equals(TelegramChoice._NewKeyboardLine))
 				{
 					numOfEl = 1;
 					rows.Add(currentRow);
@@ -1147,7 +1148,12 @@ namespace Telegram.Messaging.Messaging
 					continue;
 				}
 
-				currentRow.Add(new InlineKeyboardButton(a.Label) { CallbackData = a.ToJsonSpecial(), Url = a.IsUrl ? a.Value : null });
+				if (a.Label == null)
+				{
+					log.Error($"{a} has null label");
+				}
+				else
+					currentRow.Add(new InlineKeyboardButton(a.Label) { CallbackData = a.ToJsonSpecial(), Url = a.IsUrl ? a.Value : null });
 
 				if (numOfEl++ == itemsPerRow)
 				{
@@ -1165,7 +1171,7 @@ namespace Telegram.Messaging.Messaging
 			currentRow = null;
 			foreach (TelegramChoice a in onlyCommands)
 			{
-				if (a.Equals(TelegramChoice.PayAnswer)) // pay must be the first
+				if (a.Equals(TelegramChoice._PayAnswer)) // pay must be the first
 				{
 					if (rows.Count == 0) currentRow = new List<InlineKeyboardButton>();
 					else currentRow = rows[0];
@@ -1173,13 +1179,13 @@ namespace Telegram.Messaging.Messaging
 					currentRow = null;
 				}
 				// these will stay on a row
-				else if ((a.Equals(TelegramChoice.PrevPageAnswer) || a.Equals(TelegramChoice.CurrPageAnswer) || a.Equals(TelegramChoice.NextPageAnswer)) && pageNavAdded == false)
+				else if ((a.Equals(TelegramChoice._PrevPageAnswer) || a.Equals(TelegramChoice._CurrPageAnswer) || a.Equals(TelegramChoice._NextPageAnswer)) && pageNavAdded == false)
 				{
 					pageNavAdded = true;
 					currentRow = new List<InlineKeyboardButton>();
 				}
 				// these will stay on a row
-				else if ((a.Equals(TelegramChoice.BackAnswer) || a.Equals(TelegramChoice.SkipAnswer) || a.Equals(TelegramChoice.CancelAnswer)) && questionNavAdded == false)
+				else if ((a.Equals(TelegramChoice._BackAnswer) || a.Equals(TelegramChoice._SkipAnswer) || a.Equals(TelegramChoice._CancelAnswer)) && questionNavAdded == false)
 				{
 					questionNavAdded = true;
 					currentRow = new List<InlineKeyboardButton>();

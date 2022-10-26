@@ -337,7 +337,7 @@ namespace Telegram.Messaging.Db
 			{
 				TelegramConstraints.ForEach(constraint =>
 					{
-						if (answer != TelegramChoice.NewKeyboardLine && answer.IsSystemChoice == false && constraint.Validate(answer.Value) == false)
+						if (answer != TelegramChoice._NewKeyboardLine && answer.IsSystemChoice == false && constraint.Validate(answer.Value) == false)
 							log.Debug($"Choice {answer.Value} is not valid for this question {QuestionText}, type:{FieldTypeId}");
 					}
 				);
@@ -354,7 +354,7 @@ namespace Telegram.Messaging.Db
 			if (answer == null) return;
 
 			foreach (var constraint in TelegramConstraints)
-				if (answer != TelegramChoice.NewKeyboardLine && answer.IsSystemChoice == false && constraint.Validate(answer.Value) == false)
+				if (answer != TelegramChoice._NewKeyboardLine && answer.IsSystemChoice == false && constraint.Validate(answer.Value) == false)
 				{
 					//log.Debug($"Choice {answer.Value} is not valid for this question {QuestionText}, type:{FieldTypeId}");
 					return;
