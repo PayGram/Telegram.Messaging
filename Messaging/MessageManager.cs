@@ -1,5 +1,6 @@
 ﻿using log4net;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Newtonsoft.Json;
 using System.Diagnostics;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
@@ -1455,7 +1456,7 @@ namespace Telegram.Messaging.Messaging
 					Debug.WriteLine("message is not modified");
 				}
 				else
-					log.Debug($"{mngr}", ar);
+					log.Debug($"{mngr} - replyMarkup: {JsonConvert.SerializeObject(keyboard)}", ar);
 			}
 			catch (Exception ex)
 			{
@@ -1474,14 +1475,14 @@ namespace Telegram.Messaging.Messaging
 				}
 				catch (Exception exx)
 				{
-					log.Debug($"{mngr}. error sending a new one..", exx);
+					log.Error($"{mngr} - replyMarkup: {JsonConvert.SerializeObject(keyboard)}. error sending a new one..", exx);
 					sent = null;
 				}
 			}
 
 			if (sent == null)
 			{
-				log.Debug($"{mngr} sent message is null. Maybe messageNotModified? {messageNotModified}");
+				log.Error($"{mngr} sent message is null. Maybe messageNotModified? {messageNotModified}");
 				return null;
 			}
 
