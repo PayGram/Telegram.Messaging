@@ -1443,10 +1443,11 @@ namespace Telegram.Messaging.Messaging
 			{
 				sent = await tClient.EditMessageTextAsync(
 								mngr.ChatId
-								, (int)mngr.DashboardMsgId
+								, mngr.DashboardMsgId
 								, qText
-								, parseMode: ParseMode.Html
-								, replyMarkup: keyboard);
+								, parseMode: ParseMode.Html 
+								, replyMarkup: keyboard
+								, disableWebPagePreview: question.DisableWebPagePreview);
 			}
 			catch (ApiRequestException ar)
 			{
@@ -1470,7 +1471,8 @@ namespace Telegram.Messaging.Messaging
 							mngr.ChatId
 							, qText
 							, replyMarkup: keyboard
-							, parseMode: ParseMode.Html);
+							, parseMode: ParseMode.Html
+							, disableWebPagePreview: question.DisableWebPagePreview);
 					mngr.recentMessageSent = false;
 				}
 				catch (Exception exx)
@@ -1538,12 +1540,12 @@ namespace Telegram.Messaging.Messaging
 		/// <param name="message">The message to send, html is accepted</param>
 		/// <param name="removeMenu">If set to true, removes any system menu shown to the user after the message has been sen</param>
 		/// <returns></returns>
-		public async Task<Message?> SendMessage(string message, IReplyMarkup markup = null)
+		public async Task<Message?> SendMessage(string message, IReplyMarkup? markup = null, bool? disableWebPagePreview = false)
 		{
 			try
 			{
 				semSend.WaitOne();
-				var m = await tClient.SendTextMessageAsync(new ChatId(ChatId), message, parseMode: ParseMode.Html, replyMarkup: markup);
+				var m = await tClient.SendTextMessageAsync(new ChatId(ChatId), message, parseMode: ParseMode.Html, replyMarkup: markup, disableWebPagePreview: disableWebPagePreview);
 				recentMessageSent = true;
 				return m;
 			}

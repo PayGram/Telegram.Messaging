@@ -26,6 +26,7 @@ namespace Telegram.Messaging.Db
 		public string QuestionText { get; set; }
 		public int InternalId { get; set; }
 		public string? FollowUp { get; set; }
+		public bool? DisableWebPagePreview { get; set; }		
 		public int MaxButtonsPerRow { get; set; }
 		[StringLength(10)]
 		public string? FollowUpSeparator { get; set; }
