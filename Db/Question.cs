@@ -1,5 +1,6 @@
 ﻿using log4net;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -26,7 +27,7 @@ namespace Telegram.Messaging.Db
 		public string QuestionText { get; set; }
 		public int InternalId { get; set; }
 		public string? FollowUp { get; set; }
-		public bool? DisableWebPagePreview { get; set; }		
+		public bool? DisableWebPagePreview { get; set; }
 		public int MaxButtonsPerRow { get; set; }
 		[StringLength(10)]
 		public string? FollowUpSeparator { get; set; }

@@ -24,6 +24,8 @@ namespace Telegram.Messaging.Types
 		/// </summary>
 		public long OriginatingMessageId => Query?.Message.MessageId ?? 0;
 
+		public bool CallbackQueryAnswered { get; set; }
+
 		internal TelegramMessage(Message message, string botName, string[] availableCommands)
 		{
 			AvailableCommands = availableCommands;

@@ -1174,29 +1174,46 @@ namespace Telegram.Messaging.Messaging
 			{
 				if (a.Equals(TelegramChoice._PayAnswer)) // pay must be the first
 				{
-					if (rows.Count == 0) currentRow = new List<InlineKeyboardButton>();
-					else currentRow = rows[0];
-					currentRow.Insert(0, new InlineKeyboardButton(a.Label) { Pay = true, CallbackData = a.ToJsonSpecial() });
-					currentRow = null;
+					var payButton = new InlineKeyboardButton(a.Label) { Pay = true, CallbackData = a.ToJsonSpecial() };
+					if (rows.Count == 0)
+					{
+						currentRow = currentRow ?? new();
+						currentRow.Insert(0, payButton);
+					}
+					else
+					{
+						rows[0].Insert(0, payButton);
+					}
 				}
-				// these will stay on a row
-				else if ((a.Equals(TelegramChoice._PrevPageAnswer) || a.Equals(TelegramChoice._CurrPageAnswer) || a.Equals(TelegramChoice._NextPageAnswer)) && pageNavAdded == false)
+				else
 				{
-					pageNavAdded = true;
-					currentRow = new List<InlineKeyboardButton>();
+					// these will stay on a row
+					if ((a.Equals(TelegramChoice._PrevPageAnswer) || a.Equals(TelegramChoice._CurrPageAnswer) || a.Equals(TelegramChoice._NextPageAnswer)) && pageNavAdded == false)
+					{
+						if (currentRow != null)
+							rows.Add(currentRow);
+						pageNavAdded = true;
+						currentRow = new List<InlineKeyboardButton>();
+					}
+					// these will stay on a row
+					else if ((a.Equals(TelegramChoice._BackAnswer) || a.Equals(TelegramChoice._SkipAnswer) || a.Equals(TelegramChoice._CancelAnswer)) && questionNavAdded == false)
+					{
+						if (currentRow != null)
+							rows.Add(currentRow);
+						questionNavAdded = true;
+						currentRow = new List<InlineKeyboardButton>();
+					}
+					if (currentRow == null) // only if there is a command which is not in the IFs
+						currentRow = new List<InlineKeyboardButton>();
+					currentRow.Add(new InlineKeyboardButton(a.Label) { CallbackData = a.ToJsonSpecial() });
 				}
-				// these will stay on a row
-				else if ((a.Equals(TelegramChoice._BackAnswer) || a.Equals(TelegramChoice._SkipAnswer) || a.Equals(TelegramChoice._CancelAnswer)) && questionNavAdded == false)
-				{
-					questionNavAdded = true;
-					currentRow = new List<InlineKeyboardButton>();
-				}
-				if (currentRow == null) // only if there is a command which is not in the IFs
-					currentRow = new List<InlineKeyboardButton>();
-				currentRow.Add(new InlineKeyboardButton(a.Label) { CallbackData = a.ToJsonSpecial() });
 			}
-			if (currentRow != null && currentRow.Count != 0)
-				rows.Add(currentRow);
+			if (currentRow != null/* && currentRow.Count != 0*/)
+				if (currentRow.Count == 0)
+				{
+				}
+				else
+					rows.Add(currentRow);
 
 			InlineKeyboardMarkup rkm = new InlineKeyboardMarkup(rows);
 
@@ -1329,15 +1346,6 @@ namespace Telegram.Messaging.Messaging
 				return null;
 			}
 
-			// this is needed by Telegram to close  properly the communication flow
-			// at this time all the events should have been handled
-			if (CurrentMessage?.IsCallbackQuery == true)
-				try
-				{
-					await tClient.AnswerCallbackQueryAsync(CurrentMessage.Query.Id);
-				}
-				catch (Exception) { log.Debug($"{TId}:{UsernameOrFirstName}. Exception while updating the callbackquery for {CurrentMessage}-{CurrentMessage.Query.Id}"); }
-
 			try
 			{
 				return await doSendQuestion(tClient, this, question, false);
@@ -1351,6 +1359,18 @@ namespace Telegram.Messaging.Messaging
 			{
 				semSend.Release();
 			}
+		}
+
+		public async Task AnswerCurrentCallbackQueryAsync(string? msg = null, bool? showAlert = null, string? url = null)
+		{
+			if (CurrentMessage?.IsCallbackQuery == true && CurrentMessage.CallbackQueryAnswered == false)
+				try
+				{
+					CurrentMessage.CallbackQueryAnswered = true;
+					await tClient.AnswerCallbackQueryAsync(CurrentMessage.Query.Id, msg, showAlert, url);
+				}
+				catch (Exception) { log.Debug($"{TId}:{UsernameOrFirstName}. Exception while updating the callbackquery for {CurrentMessage}-{CurrentMessage.Query.Id}"); }
+
 		}
 
 		/// <summary>
@@ -1445,7 +1465,7 @@ namespace Telegram.Messaging.Messaging
 								mngr.ChatId
 								, mngr.DashboardMsgId
 								, qText
-								, parseMode: ParseMode.Html 
+								, parseMode: ParseMode.Html
 								, replyMarkup: keyboard
 								, disableWebPagePreview: question.DisableWebPagePreview);
 			}
