@@ -285,7 +285,7 @@ namespace Telegram.Messaging.Db
 			}
 			catch (Exception ex)
 			{
-				log.Error($"Error updating Question {this.QuestionText}", ex);
+				log.Error($"Error updating Question {this}", ex);
 			}
 		}
 
@@ -300,7 +300,7 @@ namespace Telegram.Messaging.Db
 			}
 			catch (Exception ex)
 			{
-				log.Error($"Error deleting Question {this.QuestionText}", ex);
+				log.Error($"Error deleting Question {this}", ex);
 			}
 		}
 
