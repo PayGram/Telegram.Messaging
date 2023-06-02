@@ -22,7 +22,7 @@ namespace Telegram.Messaging.Types
 		/// <summary>
 		/// if the message represents a callback, gets the message id that originated the callback, otherwise 0
 		/// </summary>
-		public long OriginatingMessageId => Query?.Message.MessageId ?? 0;
+		public long OriginatingMessageId => Query?.Message?.MessageId ?? 0;
 
 		public bool CallbackQueryAnswered { get; set; }
 
