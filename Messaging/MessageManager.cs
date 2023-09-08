@@ -626,13 +626,16 @@ namespace Telegram.Messaging.Messaging
 				// if the following happens, we must delete the message, it's too old or it scrolled up or it mismatch with the current situation
 				if (originatingMsgId != 0 && (currentSurveyIsNull || dashboardScrolledUp || originatingQuestIdMismatch || originatingMsgIdMismatch))
 				{
+					log.Debug($"{this} originatingMsgId: {originatingMsgId}, mostRecent.Id: {mostRecent?.Id}, originatingQuestId: {originatingQuestId}, CurrentSurvey.TelegramMessageId: {CurrentSurvey?.TelegramMessageId}, originatingMsgId: {originatingMsgId}");
+					log.Debug($"{this}. removing clicked message. originatingMsgId: {originatingMsgId}, currentSurveyIsNull: {currentSurveyIsNull}, dashboardScrolledUp: {dashboardScrolledUp}, originatingQuestIdMismatch {originatingQuestIdMismatch}, originatingMsgIdMismatch: {originatingMsgIdMismatch}.");
 					await RemoveMessageAsync(originatingMsgId);
 				}
 
 				// something did not go as expected
 				if (currentSurveyIsNull || originatingQuestIdMismatch || originatingMsgIdMismatch)
 				{
-					log.Debug($"{this}. Invalid answer given or expired survey. Raise invalid interaction and then process eventual commands");
+					log.Debug($"{this} originatingMsgId: {originatingMsgId}, mostRecent.Id: {mostRecent?.Id}, originatingQuestId: {originatingQuestId}, CurrentSurvey.TelegramMessageId: {CurrentSurvey?.TelegramMessageId}, originatingMsgId: {originatingMsgId}");
+					log.Debug($"{this}. Invalid answer, originatingQuestIdMismatch: {originatingQuestIdMismatch}, originatingMsgIdMismatch: {originatingMsgIdMismatch}, given or expired survey: {currentSurveyIsNull}. Raise invalid interaction and then process eventual commands");
 					await RaiseOnInvalidInteraction(new InvalidInteractionEventArgs()
 					{
 						TelegramMessage = CurrentMessage,
@@ -1419,11 +1422,13 @@ namespace Telegram.Messaging.Messaging
 					mngr.recentMessageSent = false;
 					sent = await tClient.SendTextMessageAsync(
 								mngr.ChatId
-								, "hold on.. monkeys are loading bananas..");
+								, "hold on ⏳...");
+
+					log.Debug($"{mngr} sent.Id: {sent.MessageId} - survid: {surv.Id}, q: {question}");
 				}
 				catch (Exception ex)
 				{
-					log.Debug($"{mngr}. Error sending the monkeys loading message.", ex);
+					log.Debug($"{mngr}. Error sending the hold on message.", ex);
 					sent = null;
 				}
 			}
@@ -1477,7 +1482,7 @@ namespace Telegram.Messaging.Messaging
 					Debug.WriteLine("message is not modified");
 				}
 				else
-					log.Debug($"{mngr} - replyMarkup: {JsonConvert.SerializeObject(keyboard)}", ar);
+					log.Error($"{mngr} - replyMarkup: {JsonConvert.SerializeObject(keyboard)}", ar);
 			}
 			catch (Exception ex)
 			{
@@ -1494,6 +1499,7 @@ namespace Telegram.Messaging.Messaging
 							, parseMode: ParseMode.Html
 							, disableWebPagePreview: question.DisableWebPagePreview);
 					mngr.recentMessageSent = false;
+					log.Debug($"{mngr} sent.Id: {sent.MessageId} - survid: {surv.Id}. q: {question}");
 				}
 				catch (Exception exx)
 				{
@@ -1504,7 +1510,8 @@ namespace Telegram.Messaging.Messaging
 
 			if (sent == null)
 			{
-				log.Error($"{mngr} sent message is null. Maybe messageNotModified? {messageNotModified}");
+				if (messageNotModified == false)
+					log.Error($"{mngr} sent message is null. Maybe messageNotModified? {messageNotModified}");
 				return null;
 			}
 
