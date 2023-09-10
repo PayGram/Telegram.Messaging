@@ -29,9 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Utilities">
-      <HintPath>..\Utilities\bin\$(Configuration)\net6.0\Utilities.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\Utilities\Utilities.csproj" />
   </ItemGroup>
 
 </Project>
