@@ -18,7 +18,7 @@ namespace Telegram.Messaging.Db
 		public Survey Survey { get; set; }
 		public int Id { get; set; }
 		public FieldTypes FieldTypeId { get; set; }
-		public FieldType FieldType { get; set; }
+		public DbFieldType FieldType { get; set; }
 		public bool PickOnlyDefaultAnswers { get; set; }
 		public bool IsCompleted { get; set; }
 		public bool IsMandatory { get; set; }

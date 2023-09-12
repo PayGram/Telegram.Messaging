@@ -3,17 +3,17 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Telegram.Messaging.Db
 {
-	public class FieldType
+	public class DbFieldType
 	{
 		[Key]
 		public FieldTypes Id { get; set; }
 		public string Name { get; set; }
 
-		public static async Task<FieldType?> CreateOrGet(string name)
+		public static async Task<DbFieldType?> CreateOrGet(string name)
 		{
 			using (var db = new MessagingDb())
 			{
-				var ft = new FieldType() { Name = name };
+				var ft = new DbFieldType() { Name = name };
 				try
 				{
 					db.FieldTypes.Add(ft);

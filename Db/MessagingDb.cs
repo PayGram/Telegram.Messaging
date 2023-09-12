@@ -10,7 +10,7 @@ namespace Telegram.Messaging.Db
 		const string CONFIG_FILENAME = "\\connections.tg.msg.config";
 
 		public DbSet<Question> Questions { get; set; }
-		public DbSet<FieldType> FieldTypes { get; set; }
+		public DbSet<DbFieldType> FieldTypes { get; set; }
 		public DbSet<Survey> Surveys { get; set; }
 
 		public MessagingDb() : base()
@@ -26,7 +26,7 @@ namespace Telegram.Messaging.Db
 			modelBuilder.Entity<Survey>()
 				.HasMany(s => s.Questions);
 
-			modelBuilder.Entity<FieldType>()
+			modelBuilder.Entity<DbFieldType>()
 			   .HasAlternateKey(f => f.Name);
 
 			modelBuilder.Entity<Question>().HasOne(q => q.Survey).WithMany(x => x.Questions);

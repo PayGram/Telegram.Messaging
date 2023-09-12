@@ -1423,31 +1423,6 @@ namespace Telegram.Messaging.Messaging
 
 			Message? sent = null;
 
-			//if (mngr.DashboardMsgId == 0)
-			//{
-			//	try
-			//	{
-			//		mngr.recentMessageSent = false;
-			//		sent = await tClient.SendTextMessageAsync(
-			//					mngr.ChatId
-			//					, "hold on ⏳...");
-
-			//		log.Debug($"{mngr} sent.Id: {sent.MessageId} - survid: {surv.Id}, q: {question}");
-			//	}
-			//	catch (Exception ex)
-			//	{
-			//		log.Debug($"{mngr}. Error sending the hold on message.", ex);
-			//		sent = null;
-			//	}
-			//}
-
-			//if (sent == null && mngr.DashboardMsgId == 0)
-			//{
-			//	log.Debug($"{mngr} sent message is null and surv.TelegramMessageId is null. {surv}");
-			//	return null;
-			//}
-			//mngr.DashboardMsgId = sent?.MessageId ?? mngr.DashboardMsgId;
-
 			bool messageNotModified = false;
 			if (mngr.DashboardMsgId != 0)
 				try
@@ -1479,7 +1454,7 @@ namespace Telegram.Messaging.Messaging
 
 			if (sent == null && messageNotModified == false)
 			{
-				//if the message couldn't be updated, it might because it was deleted or too long time has passed.
+				// if the message couldn't be updated, it might because it was deleted or too long time has passed.
 				// in this case we send a new one
 				try
 				{
