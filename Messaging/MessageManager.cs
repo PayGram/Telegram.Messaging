@@ -1,5 +1,4 @@
 ﻿using log4net;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using Telegram.Bot;
@@ -574,7 +573,7 @@ namespace Telegram.Messaging.Messaging
 		/// Process the command previously parsed and loaded
 		/// </summary>
 		/// <returns>The associated TelegramMessage or null</returns>
-		private async Task<TelegramMessage> ProcessCurrentMessage()
+		private async Task<TelegramMessage?> ProcessCurrentMessage()
 		{
 			//checked some setup
 			if (CurrentMessage == null)
@@ -591,29 +590,18 @@ namespace Telegram.Messaging.Messaging
 				Question mostRecent = CurrentSurvey?.MostRecentQuestion;
 
 				TelegramChoice pickedChoice = CurrentMessage.PickedChoice;
-				long originatingMsgId = CurrentMessage.OriginatingMessageId != 0 ? CurrentMessage.OriginatingMessageId : DashboardMsgId;// CurrentSurvey?.TelegramMessageId ;
+				long originatingMsgId = CurrentMessage.OriginatingMessageId != 0 ? CurrentMessage.OriginatingMessageId : DashboardMsgId;
 				long originatingQuestId = pickedChoice?.QuestionId ?? mostRecent?.Id ?? 0;
 
 				// let's see the previous question, maybe we can get the messageId that is still displaying a menu, in this case we remove it
-				if (mostRecent == null && (/*originatingMsgId == 0 ||*/ originatingQuestId == 0))
+				if (mostRecent == null && originatingQuestId == 0)
 				{
 					var mostRecentExpired = await Question.GetMostRecentAsync(TId);
 					if (mostRecentExpired != null)
 					{
-						//if (originatingMsgId == 0)
-						//	originatingMsgId = mostRecentExpired.Survey.TelegramMessageId ?? 0;
 						if (originatingQuestId == 0)
 							originatingQuestId = mostRecentExpired.Id;
 					}
-				}
-
-				// pickedChoice will be different from null if the user pressed an inline button
-				if (pickedChoice != null)
-				{
-					// TelegramChoice.MessageId has been removed from the serialization of the TelegramChoice, so we must update it
-					pickedChoice.MessageId = originatingMsgId;
-					if (pickedChoice.MessageId == 0)
-						log.Debug($"{TId}:{UsernameOrFirstName}. We could not find the originating message id for question {pickedChoice.QuestionId}. Maybe this survey was removed from db?");
 				}
 
 
@@ -952,7 +940,7 @@ namespace Telegram.Messaging.Messaging
 		{
 			if (question == null) return;
 			if (CurrentSurvey == null) CurrentSurvey = question.Survey;
-			if (CurrentSurvey.IsActive == false) { log.Debug($"ChangePage question on non active survey. Survey: {CurrentSurvey.Id}, Completed: {CurrentSurvey.IsCompleted}, Cancelled: {CurrentSurvey.IsCancelled}"); }
+			if (CurrentSurvey.IsActive == false) { log.Warn($"ChangePage question on non active survey. Survey: {CurrentSurvey.Id}, Completed: {CurrentSurvey.IsCompleted}, Cancelled: {CurrentSurvey.IsCancelled}"); }
 
 			// if defAnswers is null it means that we have to display the same choices as before, except for the system commands that might have changed
 			// so we take a list of the choices we had before, but the system commands
@@ -1013,7 +1001,7 @@ namespace Telegram.Messaging.Messaging
 		{
 			if (question == null) return null;
 			if (CurrentSurvey == null) CurrentSurvey = question.Survey;
-			if (CurrentSurvey.IsActive == false) { log.Debug($"{TId}:{UsernameOrFirstName}. FollowUp question on non active survey. Survey: {CurrentSurvey.Id}, Completed: {CurrentSurvey.IsCompleted}, Cancelled: {CurrentSurvey.IsCancelled}"); }
+			if (CurrentSurvey.IsActive == false) { log.Warn($"{TId}:{UsernameOrFirstName}. FollowUp question on non active survey. Survey: {CurrentSurvey.Id}, Completed: {CurrentSurvey.IsCompleted}, Cancelled: {CurrentSurvey.IsCancelled}"); }
 
 			Question newQuestion;
 
@@ -1130,17 +1118,17 @@ namespace Telegram.Messaging.Messaging
 
 			// we seprate the system commands from the other commands, so we can create a
 			// nice layout for the keyboard according to the effective number of choices 
-			List<TelegramChoice> onlyChoices = new List<TelegramChoice>();//choices.Except(TelegramChoice.SystemChoices).ToList(); // this returns only one occurency of NewKeyboardLine as the instance is the same
+			List<TelegramChoice> onlyChoices = new List<TelegramChoice>(); // this returns only one occurency of NewKeyboardLine as the instance is the same
 			foreach (var c in choices)
 				if (c.IsSystemChoice == false)
 					onlyChoices.Add(c);
 			List<TelegramChoice> onlyCommands = choices.Intersect(TelegramChoice.SystemChoices).ToList();
 
 			int itemsPerRow = GetElementsPerRow(onlyChoices.Count);
-			if (maxButtPerRow > 0 && itemsPerRow > maxButtPerRow /*&& choices.Contains(TelegramChoice.NewKeyboardLine) == false*/)
+			if (maxButtPerRow > 0 && itemsPerRow > maxButtPerRow)
 				itemsPerRow = maxButtPerRow;
 			List<List<InlineKeyboardButton>> rows = new List<List<InlineKeyboardButton>>();
-			List<InlineKeyboardButton> currentRow = new List<InlineKeyboardButton>();
+			List<InlineKeyboardButton>? currentRow = new List<InlineKeyboardButton>();
 			int numOfEl = 1;
 			foreach (TelegramChoice a in onlyChoices)
 			{
@@ -1211,7 +1199,7 @@ namespace Telegram.Messaging.Messaging
 					currentRow.Add(new InlineKeyboardButton(a.Label) { CallbackData = a.ToJsonSpecial() });
 				}
 			}
-			if (currentRow != null/* && currentRow.Count != 0*/)
+			if (currentRow != null)
 				if (currentRow.Count == 0)
 				{
 				}
@@ -1251,8 +1239,9 @@ namespace Telegram.Messaging.Messaging
 			try
 			{
 				semSend.WaitOne();
-				recentMessageSent = false;
-				DashboardMsgId = 0;
+				//recentMessageSent = false;
+				if (originatingMsgId == DashboardMsgId) //this will force a new dashboard to be sent
+					DashboardMsgId = 0;
 
 #if DEBUG_
 						log.Debug($"{TId}:{UsernameOrFirstName}. editing message: {originatingMsgId}, {originatingQuestId}, {mostRecent}, {CurrentSurvey}");
@@ -1409,40 +1398,10 @@ namespace Telegram.Messaging.Messaging
 			await question.UpdateQuestion();
 			if (surv.IsActive == false)
 			{
-				// might happen if called from updatingshownquestion
-				log.Debug($"{mngr}. Sending question on non active survey. Updating: {updating}, Survey: {surv.Id}, Completed: {surv.IsCompleted}, Cancelled: {surv.IsCancelled}. ");
+				// might happen if called from UpdateShownQuestion
+				log.Warn($"{mngr}. Sending question on non active survey. Updating: {updating}, Survey: {surv.Id}, Completed: {surv.IsCompleted}, Cancelled: {surv.IsCancelled}. ");
 			}
 
-			Message sent = null;
-
-			if (mngr.DashboardMsgId == 0)
-			{
-				try
-				{
-					mngr.recentMessageSent = false;
-					sent = await tClient.SendTextMessageAsync(
-								mngr.ChatId
-								, "hold on ⏳...");
-
-					log.Debug($"{mngr} sent.Id: {sent.MessageId} - survid: {surv.Id}, q: {question}");
-				}
-				catch (Exception ex)
-				{
-					log.Debug($"{mngr}. Error sending the hold on message.", ex);
-					sent = null;
-				}
-			}
-
-			if (sent == null && mngr.DashboardMsgId == 0)
-			{
-				log.Debug($"{mngr} sent message is null and surv.TelegramMessageId is null. {surv}");
-				return null;
-			}
-			mngr.DashboardMsgId = sent?.MessageId ?? mngr.DashboardMsgId;
-
-			//long updateMessageId = sent?.MessageId ?? surv.TelegramMessageId ?? 0;
-			//if (updateMessageId == 0)
-			//	updateMessageId = mngr.DashboardMsgId;
 
 			// now let's update the choices setting the message id and question id to this message, so when 
 			// the user answers, we know which message the callback comes from
@@ -1450,10 +1409,9 @@ namespace Telegram.Messaging.Messaging
 			if (DefaultAnswersList != null)
 				foreach (var x in DefaultAnswersList)
 				{
-					x.MessageId = mngr.DashboardMsgId;
 					x.QuestionId = question.Id;
 				}
-			InlineKeyboardMarkup keyboard = CreateInlineMarkupKeyboard(DefaultAnswersList, question.MaxButtonsPerRow);
+			var keyboard = DefaultAnswersList == null ? null : CreateInlineMarkupKeyboard(DefaultAnswersList, question.MaxButtonsPerRow);
 
 			string qText = $"<u>{question.QuestionText}</u>";
 			if (string.IsNullOrWhiteSpace(question.FollowUp) == false)
@@ -1463,32 +1421,65 @@ namespace Telegram.Messaging.Messaging
 				qText = $"{qText}{Environment.NewLine}{question.FollowUp}";
 			}
 
+			Message? sent = null;
+
+			//if (mngr.DashboardMsgId == 0)
+			//{
+			//	try
+			//	{
+			//		mngr.recentMessageSent = false;
+			//		sent = await tClient.SendTextMessageAsync(
+			//					mngr.ChatId
+			//					, "hold on ⏳...");
+
+			//		log.Debug($"{mngr} sent.Id: {sent.MessageId} - survid: {surv.Id}, q: {question}");
+			//	}
+			//	catch (Exception ex)
+			//	{
+			//		log.Debug($"{mngr}. Error sending the hold on message.", ex);
+			//		sent = null;
+			//	}
+			//}
+
+			//if (sent == null && mngr.DashboardMsgId == 0)
+			//{
+			//	log.Debug($"{mngr} sent message is null and surv.TelegramMessageId is null. {surv}");
+			//	return null;
+			//}
+			//mngr.DashboardMsgId = sent?.MessageId ?? mngr.DashboardMsgId;
+
 			bool messageNotModified = false;
-			try
-			{
-				sent = await tClient.EditMessageTextAsync(
-								mngr.ChatId
-								, mngr.DashboardMsgId
-								, qText
-								, parseMode: ParseMode.Html
-								, replyMarkup: keyboard
-								, disableWebPagePreview: question.DisableWebPagePreview);
-			}
-			catch (ApiRequestException ar)
-			{
-				if (ar.Message.Contains("message is not modified"))
+			if (mngr.DashboardMsgId != 0)
+				try
 				{
-					messageNotModified = true;
-					Debug.WriteLine("message is not modified");
+					sent = await tClient.EditMessageTextAsync(
+									mngr.ChatId
+									, mngr.DashboardMsgId
+									, qText
+									, parseMode: ParseMode.Html
+									, replyMarkup: keyboard
+									, disableWebPagePreview: question.DisableWebPagePreview);
 				}
-				else
-					log.Error($"{mngr} - replyMarkup: {JsonConvert.SerializeObject(keyboard)}", ar);
-			}
-			catch (Exception ex)
+				catch (ApiRequestException ar)
+				{
+					if (ar.Message.ToLower().Contains("message is not modified"))
+					{
+						messageNotModified = true;
+						//Debug.WriteLine("message is not modified");
+					}
+					else
+						log.Error($"{mngr} - while editing. sending a new one. replyMarkup: {JsonConvert.SerializeObject(keyboard)}", ar);
+				}
+				catch (Exception ex)
+				{
+					// that's strange
+					log.Error($"{mngr} could not update {mngr.DashboardMsgId}. Sending a new one", ex);
+				}
+
+
+			if (sent == null && messageNotModified == false)
 			{
-				// that's strange
-				log.Warn($"{mngr} could not update {mngr.DashboardMsgId}. Sending a new one", ex);
-				// if the message couldn't be updated, it might because it was deleted or too long time has passed.
+				//if the message couldn't be updated, it might because it was deleted or too long time has passed.
 				// in this case we send a new one
 				try
 				{
@@ -1503,8 +1494,9 @@ namespace Telegram.Messaging.Messaging
 				}
 				catch (Exception exx)
 				{
-					log.Error($"{mngr} - replyMarkup: {JsonConvert.SerializeObject(keyboard)}. error sending a new one..", exx);
+					log.Fatal($"{mngr} - replyMarkup: {JsonConvert.SerializeObject(keyboard)}. error sending a new one..", exx);
 					sent = null;
+					// this is bad!!
 				}
 			}
 

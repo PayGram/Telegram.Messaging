@@ -103,7 +103,6 @@ namespace Telegram.Messaging.Types
 					Command.IsValidCommand = AvailableCommands.Where(x => x.Equals(command, StringComparison.InvariantCultureIgnoreCase)).Count() > 0;//perhaps ==1
 
 			Command.Name = command;
-
 		}
 
 		public override string ToString()

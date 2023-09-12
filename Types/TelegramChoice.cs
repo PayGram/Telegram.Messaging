@@ -44,9 +44,9 @@ namespace Telegram.Messaging.Types
 		public string Value { get; set; }
 		[JsonProperty("p")]
 		public string Param { get; set; }
-		[JsonIgnoreAttribute]
-		[JsonProperty("m")]
-		public long MessageId { get; set; }
+		//[JsonIgnoreAttribute]
+		//[JsonProperty("m")]
+		//public long MessageId { get; set; }
 		[JsonProperty("q")]
 		public long QuestionId { get; set; }
 
@@ -176,7 +176,7 @@ namespace Telegram.Messaging.Types
 		}
 		public override string ToString()
 		{
-			return $"QID:{QuestionId}:MID:{MessageId}:{Label}:{Value}";
+			return $"QID:{QuestionId}:{Label}:{Value}";
 		}
 	}
 }
