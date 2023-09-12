@@ -95,11 +95,11 @@ namespace Telegram.Messaging.Types
 			}
 
 			if (Command.IsValidCommand)
-				if (AvailableCommands == null)
-					Command.IsValidCommand = true;
-				else
-					if (command.Equals(TelegramCommand.START, StringComparison.InvariantCultureIgnoreCase) == false &&
-						command.Equals(TelegramCommand.STARTGROUP, StringComparison.InvariantCultureIgnoreCase) == false) // these are always good
+				//if (AvailableCommands == null)
+				//	Command.IsValidCommand = true;
+				//else
+				if (command.Equals(TelegramCommand.START, StringComparison.InvariantCultureIgnoreCase) == false &&
+					command.Equals(TelegramCommand.STARTGROUP, StringComparison.InvariantCultureIgnoreCase) == false) // these are always good
 					Command.IsValidCommand = AvailableCommands.Where(x => x.Equals(command, StringComparison.InvariantCultureIgnoreCase)).Count() > 0;//perhaps ==1
 
 			Command.Name = command;

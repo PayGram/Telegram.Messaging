@@ -27,7 +27,7 @@ namespace Telegram.Messaging.Messaging
 		/// <summary>
 		/// The available valid commands for this bot, name-label
 		/// </summary>
-		public Dictionary<string, string> ValidCommands { get; private set; }
+		public List<TelegramCommandDef> ValidCommands { get; private set; }
 		/// <summary>
 		/// The current message that we have just received from the user
 		/// </summary>
@@ -101,7 +101,7 @@ namespace Telegram.Messaging.Messaging
 		/// messages after an incoming message is processed</param>
 		public MessageManager(string botName, string botToken, ITelegramBotClient client, long chatId = 0, long userId = 0)
 		{
-			ValidCommands = new Dictionary<string, string>();
+			ValidCommands = new();
 			ChatId = chatId;
 			BotName = botName;
 			BotToken = botToken;
@@ -541,7 +541,7 @@ namespace Telegram.Messaging.Messaging
 		/// <returns></returns>
 		public async Task<TelegramMessage> ProcessUpdate(Message message)
 		{
-			CurrentMessage = new TelegramMessage(message, BotName, ValidCommands.Keys.ToArray());
+			CurrentMessage = new TelegramMessage(message, BotName, ValidCommands.Select(x => x.Name).ToArray());
 			return await ProcessCurrentMessage();
 		}
 
@@ -552,8 +552,9 @@ namespace Telegram.Messaging.Messaging
 		private List<TelegramChoice> CreateChoicesFromCommands()
 		{
 			List<TelegramChoice> choices = new List<TelegramChoice>();
-			foreach (string key in ValidCommands.Keys)
-				choices.Add(new TelegramChoice(ValidCommands[key], key));
+			foreach (var comm in ValidCommands)
+				if (comm.ShowOnDashboard)
+					choices.Add(new TelegramChoice(comm.Label, comm.Name));
 			return choices;
 		}
 
@@ -565,7 +566,7 @@ namespace Telegram.Messaging.Messaging
 		/// <returns></returns>
 		public async Task<TelegramMessage> ProcessUpdate(CallbackQuery message)
 		{
-			CurrentMessage = new TelegramMessage(message, BotName, ValidCommands.Keys.ToArray());
+			CurrentMessage = new TelegramMessage(message, BotName, ValidCommands.Select(x => x.Name).ToArray());
 			return await ProcessCurrentMessage();
 		}
 

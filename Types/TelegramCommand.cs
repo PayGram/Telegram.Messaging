@@ -78,7 +78,7 @@ namespace Telegram.Messaging.Types
 		/// </summary>
 		/// <param name="name"></param>
 		/// <returns></returns>
-		public string GetParameterValue(string name)
+		public string? GetParameterValue(string name)
 		{
 			if (parameters.ContainsKey(name)) return parameters[name];
 			return null;
@@ -98,18 +98,18 @@ namespace Telegram.Messaging.Types
 			return Name + namesValues + " " + IsForAnotherBot;
 		}
 
-		public static string EscapeCommandValue(string value)
+		public static string? EscapeCommandValue(string value)
 		{
 			if (string.IsNullOrWhiteSpace(value)) return null;
-			return Convert.ToBase64String(UTF8Encoding.UTF8.GetBytes(value));
+			return Convert.ToBase64String(Encoding.UTF8.GetBytes(value));
 		}
 
-		public static string UnEscapeCommandValue(string value)
+		public static string? UnEscapeCommandValue(string value)
 		{
 			if (string.IsNullOrWhiteSpace(value)) return null;
 			try
 			{
-				return UTF8Encoding.UTF8.GetString(Convert.FromBase64String(value));
+				return Encoding.UTF8.GetString(Convert.FromBase64String(value));
 			}
 			catch (Exception)
 			{
