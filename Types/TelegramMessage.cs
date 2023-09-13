@@ -71,11 +71,12 @@ namespace Telegram.Messaging.Types
 			//parms[0]  is this is the command name
 			for (int i = 1; i < parms.Length; i++)
 			{
-				var unesc = TelegramCommand.UnEscapeCommandValue(parms[i]); // these are the rest of the parameters separated in an old fashion way name2=val1&name2=value2
-				if (unesc == parms[i]) // this parameter was in plain text
-					Command.AddParameter(i.ToString(), unesc);
-				else
+				var unesc = TelegramCommand.FromBase64(parms[i]); // these are the rest of the parameters separated in an old fashion way name2=val1&name2=value2
+
+				if (unesc.IndexOf(TelegramCommand.PARAMS_AND_SEP) != -1 && unesc.IndexOf(TelegramCommand.PARAMS_EQUAL_SEP) != -1) // this parameter is a list of name&value
 					Command.AddParameters(unesc);
+				else
+					Command.AddParameter(i.ToString(), parms[i]); //this is a parameter split by space from the others
 			}
 
 			string command = PickedChoice?.Value ?? parms[0];

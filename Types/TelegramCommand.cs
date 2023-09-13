@@ -1,4 +1,6 @@
 ﻿using log4net;
+using System.Buffers.Text;
+using System.Globalization;
 using System.Text;
 
 namespace Telegram.Messaging.Types
@@ -83,7 +85,23 @@ namespace Telegram.Messaging.Types
 			if (parameters.ContainsKey(name)) return parameters[name];
 			return null;
 		}
-
+		public T? GetParameterValue<T>(string name)
+		{
+			var value = parameters.GetValueOrDefault(name);
+			if (value == null) return default(T);
+			return (T?)Convert.ChangeType(value, typeof(T), CultureInfo.InvariantCulture);
+		}
+		public T? GetParameterAt<T>(int idx)
+		{
+			if (parameters.Count <= idx) return default(T);
+			var value = parameters.ElementAt(idx).Value;
+			if (value == null) return default(T);
+			try
+			{
+				return (T?)Convert.ChangeType(value, typeof(T), CultureInfo.InvariantCulture);
+			}
+			catch { return default(T); }
+		}
 		/// <summary>
 		/// Returns a list of name=values separated by &
 		/// </summary>
@@ -98,23 +116,19 @@ namespace Telegram.Messaging.Types
 			return Name + namesValues + " " + IsForAnotherBot;
 		}
 
-		public static string? EscapeCommandValue(string value)
+		public static string MakeBase64(string value)
 		{
-			if (string.IsNullOrWhiteSpace(value)) return null;
+			if (string.IsNullOrWhiteSpace(value)) return value;
 			return Convert.ToBase64String(Encoding.UTF8.GetBytes(value));
 		}
 
-		public static string? UnEscapeCommandValue(string value)
+		public static string FromBase64(string value)
 		{
-			if (string.IsNullOrWhiteSpace(value)) return null;
-			try
-			{
-				return Encoding.UTF8.GetString(Convert.FromBase64String(value));
-			}
-			catch (Exception)
-			{
-				return value;
-			}
+			if (string.IsNullOrWhiteSpace(value)) return value;
+			Span<byte> buffer = new Span<byte>(new byte[value.Length]);
+			bool success = Convert.TryFromBase64String(value, buffer, out int bytesParsed);
+			if (success == false) return value;
+			return Encoding.UTF8.GetString(buffer.Slice(0, bytesParsed));
 		}
 	}
 }

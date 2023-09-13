@@ -1,6 +1,8 @@
 ﻿using log4net;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
@@ -1303,7 +1305,7 @@ namespace Telegram.Messaging.Messaging
 				if (currQuestion.InternalId == lastQuestionAsked.InternalId && currQuestion.SurveyId == lastQuestionAsked.SurveyId)
 				{
 					log.Debug($"{this}. really updating question {currQuestion}.");
-					await doSendQuestion(tClient, this, currQuestion, true);
+					await doSendQuestion(tClient, this, currQuestion);
 				}
 				else
 					log.Debug($"{this}. don't update shown question because, {currQuestion.InternalId} != {lastQuestionAsked.InternalId}");
@@ -1341,7 +1343,7 @@ namespace Telegram.Messaging.Messaging
 
 			try
 			{
-				return await doSendQuestion(tClient, this, question, false);
+				return await doSendQuestion(tClient, this, question);
 			}
 			catch (Exception e)
 			{
@@ -1375,9 +1377,9 @@ namespace Telegram.Messaging.Messaging
 		/// <param name="updating"></param>
 		/// <param name="isCallbackQuery"></param>
 		/// <returns></returns>
-		private static async Task<Message?> doSendQuestion(ITelegramBotClient tClient, MessageManager mngr, Question question, bool updating)
+		private static async Task<Message?> doSendQuestion(ITelegramBotClient tClient, MessageManager mngr, Question question)
 		{
-			log.Debug($"{mngr} - Send question, updating: {updating}, {question}");
+			log.Debug($"{mngr} - Send question, {question}");
 			if (mngr == null)
 			{
 				log.Debug($"{mngr}. mngr is null");
@@ -1400,7 +1402,7 @@ namespace Telegram.Messaging.Messaging
 			if (surv.IsActive == false)
 			{
 				// might happen if called from UpdateShownQuestion
-				log.Warn($"{mngr}. Sending question on non active survey. Updating: {updating}, Survey: {surv.Id}, Completed: {surv.IsCompleted}, Cancelled: {surv.IsCancelled}. ");
+				log.Warn($"{mngr}. Sending question on non active survey. Survey: {surv.Id}, Completed: {surv.IsCompleted}, Cancelled: {surv.IsCancelled}. ");
 			}
 
 
@@ -1487,7 +1489,7 @@ namespace Telegram.Messaging.Messaging
 
 			if (surv.TelegramMessageId != mngr.DashboardMsgId)
 			{
-				log.Debug($"Survey {surv.Id} changed message from {surv.TelegramMessageId} to {mngr.DashboardMsgId}");
+				log.Debug($"{mngr} Survey {surv.Id} changed message from {surv.TelegramMessageId} to {mngr.DashboardMsgId}");
 				surv.TelegramMessageId = mngr.DashboardMsgId;
 				await surv.UpdateSurvey(false);
 			}
@@ -1537,16 +1539,20 @@ namespace Telegram.Messaging.Messaging
 		/// <returns></returns>
 		public async Task<Message?> SendMessage(string message, IReplyMarkup? markup = null, bool? disableWebPagePreview = false)
 		{
+			return await SendMessage(message, ChatId, markup, disableWebPagePreview);
+		}
+		public async Task<Message?> SendMessage(string message, long tid, IReplyMarkup? markup = null, bool? disableWebPagePreview = false)
+		{
 			try
 			{
 				semSend.WaitOne();
-				var m = await tClient.SendTextMessageAsync(new ChatId(ChatId), message, parseMode: ParseMode.Html, replyMarkup: markup, disableWebPagePreview: disableWebPagePreview);
+				var m = await tClient.SendTextMessageAsync(new ChatId(tid), message, parseMode: ParseMode.Html, replyMarkup: markup, disableWebPagePreview: disableWebPagePreview);
 				recentMessageSent = true;
 				return m;
 			}
 			catch (Exception ex)
 			{
-				log.Debug($"{TId}:{UsernameOrFirstName}. Error sending message on ChatId {ChatId}", ex);
+				log.Debug($"{TId}:{UsernameOrFirstName}. Error sending message on ChatId {tid}", ex);
 			}
 			finally
 			{
@@ -1554,7 +1560,6 @@ namespace Telegram.Messaging.Messaging
 			}
 			return null;
 		}
-
 		public async Task<Message?> SendPhoto(string caption, Stream stream)
 		{
 			try
