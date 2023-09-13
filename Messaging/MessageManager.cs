@@ -1377,7 +1377,7 @@ namespace Telegram.Messaging.Messaging
 		/// <returns></returns>
 		private static async Task<Message?> doSendQuestion(ITelegramBotClient tClient, MessageManager mngr, Question question, bool updating)
 		{
-			log.Debug($"Send question {mngr}, updating: {updating}, {question}");
+			log.Debug($"{mngr} - Send question, updating: {updating}, {question}");
 			if (mngr == null)
 			{
 				log.Debug($"{mngr}. mngr is null");
@@ -1444,7 +1444,7 @@ namespace Telegram.Messaging.Messaging
 						//Debug.WriteLine("message is not modified");
 					}
 					else
-						log.Error($"{mngr} - while editing. sending a new one. replyMarkup: {JsonConvert.SerializeObject(keyboard)}", ar);
+						log.Error($"{mngr} - while editing msg.Id: '{mngr.DashboardMsgId}'. sending a new one. replyMarkup: {JsonConvert.SerializeObject(keyboard)}", ar);
 				}
 				catch (Exception ex)
 				{
@@ -1466,7 +1466,7 @@ namespace Telegram.Messaging.Messaging
 							, parseMode: ParseMode.Html
 							, disableWebPagePreview: question.DisableWebPagePreview);
 					mngr.recentMessageSent = false;
-					log.Debug($"{mngr} sent.Id: {sent.MessageId} - survid: {surv.Id}. q: {question}");
+					log.Debug($"{mngr} sent.Id: '{sent.MessageId}' - survid: {surv.Id}. q: {question}");
 				}
 				catch (Exception exx)
 				{
