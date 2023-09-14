@@ -102,6 +102,7 @@ namespace Telegram.Messaging.Types
 			}
 			catch { return default(T); }
 		}
+		public int ParametersCount => parameters.Count;
 		/// <summary>
 		/// Returns a list of name=values separated by &
 		/// </summary>
