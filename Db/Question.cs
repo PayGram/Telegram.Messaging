@@ -186,6 +186,8 @@ namespace Telegram.Messaging.Db
 		List<TelegramAnswer> _telegramAnswers;
 		[NotMapped]
 		public List<TelegramConstraint> TelegramConstraints { get; set; }
+		
+		public string? ImageUrl { get; set; }
 
 		//static Question()
 		//{

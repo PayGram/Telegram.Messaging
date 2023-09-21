@@ -844,13 +844,13 @@ namespace Telegram.Messaging.Messaging
 		/// <param name="type">The data type of the answer</param>
 		/// <param name="defAnswers">The default answers</param>
 		/// <returns>The sent question</returns>
-		public async Task<Question> AddQuestion(int qid, string text, string followUp = null,
+		public async Task<Question> AddQuestion(int qid, string text, string? followUp = null,
 												bool isMandatory = false,
 												bool isPay = false,
 												bool pickOnlyDefAnswers = false,
 												FieldTypes type = FieldTypes.String,
-												List<TelegramChoice> defAnswers = null,
-												List<TelegramConstraint> defConstraints = null,
+												List<TelegramChoice>? defAnswers = null,
+												List<TelegramConstraint>? defConstraints = null,
 												int currentPage = 0, bool hasNextPage = false, bool hasPrevPage = false,
 												bool showSkip = false, bool showBack = false, bool showCancel = false, bool expectsCommand = false)
 		{
@@ -1427,6 +1427,13 @@ namespace Telegram.Messaging.Messaging
 			Message? sent = null;
 
 			bool messageNotModified = false;
+
+			if (string.IsNullOrWhiteSpace(question.ImageUrl) == false && mngr.DashboardMsgId != 0)
+			{
+				try { await tClient.DeleteMessageAsync(mngr.ChatId, mngr.DashboardMsgId); } catch { }
+				mngr.DashboardMsgId = 0;
+			}
+
 			if (mngr.DashboardMsgId != 0)
 				try
 				{
@@ -1440,10 +1447,24 @@ namespace Telegram.Messaging.Messaging
 				}
 				catch (ApiRequestException ar)
 				{
-					if (ar.Message.ToLower().Contains("message is not modified"))
+					var exMsg = ar.Message.ToLower();
+					if (exMsg.Contains("message is not modified"))
 					{
 						messageNotModified = true;
 						//Debug.WriteLine("message is not modified");
+					}
+					else if (exMsg.Contains("no text in the message"))
+					{
+						try
+						{
+							//await tClient.EditMessageMediaAsync(mngr.ChatId
+							//	, mngr.DashboardMsgId
+							//	, new InputOnlineFile(new Uri(question.ImageUrl))
+							//	, 
+							//	)
+							await tClient.DeleteMessageAsync(mngr.ChatId, mngr.DashboardMsgId);
+						}
+						catch { }
 					}
 					else
 						log.Error($"{mngr} - while editing msg.Id: '{mngr.DashboardMsgId}'. sending a new one. replyMarkup: {JsonConvert.SerializeObject(keyboard)}", ar);
@@ -1461,12 +1482,20 @@ namespace Telegram.Messaging.Messaging
 				// in this case we send a new one
 				try
 				{
-					sent = await tClient.SendTextMessageAsync(
-							mngr.ChatId
+					if (question.ImageUrl != null)
+						sent = await tClient.SendPhotoAsync(mngr.ChatId, new InputOnlineFile(new Uri(question.ImageUrl))
 							, qText
 							, replyMarkup: keyboard
 							, parseMode: ParseMode.Html
-							, disableWebPagePreview: question.DisableWebPagePreview);
+							);
+					else
+						sent = await tClient.SendTextMessageAsync(
+								mngr.ChatId
+								, qText
+								, replyMarkup: keyboard
+								, parseMode: ParseMode.Html
+								, disableWebPagePreview: question.DisableWebPagePreview);
+
 					mngr.recentMessageSent = false;
 					log.Debug($"{mngr} sent.Id: '{sent.MessageId}' - survid: {surv.Id}. q: {question}");
 				}
