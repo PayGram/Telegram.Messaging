@@ -1243,8 +1243,8 @@ namespace Telegram.Messaging.Messaging
 			{
 				semSend.WaitOne();
 				//recentMessageSent = false;
-				if (originatingMsgId == DashboardMsgId) //this will force a new dashboard to be sent
-					DashboardMsgId = 0;
+				if (originatingMsgId == DashboardMsgId || CurrentSurvey == null)
+					DashboardMsgId = 0; //this will force a new dashboard to be sent
 
 #if DEBUG_
 						log.Debug($"{TId}:{UsernameOrFirstName}. editing message: {originatingMsgId}, {originatingQuestId}, {mostRecent}, {CurrentSurvey}");
