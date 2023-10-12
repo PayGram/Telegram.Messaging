@@ -6,7 +6,7 @@ namespace Telegram.Messaging.CallbackHandlers
 	{
 		public MessageManager Manager { get; set; }
 
-		public virtual async Task OnDiceRolledAsync(MessageManager mngr, DiceRolledEventArgs e) { }
+		//public virtual async Task OnDiceRolledAsync(MessageManager mngr, DiceRolledEventArgs e) { }
 		public virtual async Task OnCommandAsync(MessageManager mngr, CommandReceivedEventArgs e) { }
 		public virtual async Task OnQuestionAnsweredAsync(MessageManager mngr, QuestionAnsweredEventArgs e) { }
 		public virtual async Task OnQuestionChangedAsync(MessageManager mngr, QuestionChangedEventArgs e) { }

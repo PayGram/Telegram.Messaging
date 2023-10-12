@@ -18,7 +18,6 @@ namespace Telegram.Messaging.Db
 		public Survey Survey { get; set; }
 		public int Id { get; set; }
 		public FieldTypes FieldTypeId { get; set; }
-		public DbFieldType FieldType { get; set; }
 		public bool PickOnlyDefaultAnswers { get; set; }
 		public bool IsCompleted { get; set; }
 		public bool IsMandatory { get; set; }
@@ -186,7 +185,7 @@ namespace Telegram.Messaging.Db
 		List<TelegramAnswer> _telegramAnswers;
 		[NotMapped]
 		public List<TelegramConstraint> TelegramConstraints { get; set; }
-		
+
 		public string? ImageUrl { get; set; }
 
 		//static Question()
@@ -217,6 +216,7 @@ namespace Telegram.Messaging.Db
 
 		public void DeriveConstraintFromFieldType()
 		{
+			TelegramConstraints.Clear();
 			if (FieldTypeId == FieldTypes.None) return;
 			if (TelegramConstraints.Where(x => x.Type == FieldTypeId).Count() == 0)
 				TelegramConstraints.Add(TelegramConstraint.FromTypeId((FieldTypes)FieldTypeId));
@@ -229,31 +229,31 @@ namespace Telegram.Messaging.Db
 		/// </summary>
 		/// <param name="answer">The simple answer or a json-serialized TelegramChoice</param>
 		/// <returns></returns>
-		public TelegramAnswer AddAnswer(string answer)
-		{
-			TelegramChoice choice = JsonConvertExt.DeserializeObject<TelegramChoice>(answer);
-			TelegramAnswer telegramAnswer;
-			if (choice != null)
-				telegramAnswer = new TelegramAnswer(this, choice);
-			else
-				telegramAnswer = new TelegramAnswer(this, answer);
-			_telegramAnswers.Add(telegramAnswer);
-			IsCompleted = telegramAnswer.EnforceConstraints();
-			return telegramAnswer;
-		}
+		//public TelegramAnswer AddAnswer(string answer)
+		//{
+		//	TelegramChoice choice = JsonConvertExt.DeserializeObject<TelegramChoice>(answer);
+		//	TelegramAnswer telegramAnswer;
+		//	if (choice != null)
+		//		telegramAnswer = new TelegramAnswer(this, choice);
+		//	else
+		//		telegramAnswer = new TelegramAnswer(this, answer);
+		//	_telegramAnswers.Add(telegramAnswer);
+		//	IsCompleted = telegramAnswer.EnforceConstraints();
+		//	return telegramAnswer;
+		//}
 
 		/// <summary>
 		/// Adds an answer to the answers of this questions. 
 		/// Constraints are enforced before adding it to the list and IsCompleted is set to the EnforceConstraints result
 		/// </summary>
-		public TelegramAnswer AddAnswer(TelegramChoice choice)
-		{
-			TelegramAnswer telegramAnswer = new TelegramAnswer(this, choice);
-			telegramAnswer.EnforceConstraints();
-			_telegramAnswers.Add(telegramAnswer);
-			IsCompleted = telegramAnswer.EnforceConstraints();
-			return telegramAnswer;
-		}
+		//public TelegramAnswer AddAnswer(TelegramChoice choice)
+		//{
+		//	TelegramAnswer telegramAnswer = new TelegramAnswer(this, choice);
+		//	telegramAnswer.EnforceConstraints();
+		//	_telegramAnswers.Add(telegramAnswer);
+		//	IsCompleted = telegramAnswer.EnforceConstraints();
+		//	return telegramAnswer;
+		//}
 
 		/// <summary>
 		/// Adds an answer to the answers of this questions. If the answer.Question != null or this questions contains already this answer, null will be returned.
@@ -358,7 +358,7 @@ namespace Telegram.Messaging.Db
 			if (answer == null) return;
 
 			foreach (var constraint in TelegramConstraints)
-				if (answer != TelegramChoice._NewKeyboardLine && answer.IsSystemChoice == false && constraint.Validate(answer.Value) == false)
+				if (Uri.TryCreate(answer.Value, UriKind.Absolute, out _) == false && answer != TelegramChoice._NewKeyboardLine && answer.IsSystemChoice == false && constraint.Validate(answer.Value) == false)
 				{
 					//log.Debug($"Choice {answer.Value} is not valid for this question {QuestionText}, type:{FieldTypeId}");
 					return;

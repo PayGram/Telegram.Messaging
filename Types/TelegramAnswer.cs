@@ -27,8 +27,7 @@ namespace Telegram.Messaging.Types
 		public DateTime AnswerDateUtc { get; set; }
 		[JsonProperty("pc")]
 		public TelegramChoice PickedChoice { get; set; }
-
-		[JsonConstructor]
+        [JsonConstructor]
 		public TelegramAnswer()
 		{
 		}
@@ -39,13 +38,21 @@ namespace Telegram.Messaging.Types
 			AnswerDateUtc = DateTime.UtcNow;
 			Answer = answer;
 		}
-		public TelegramAnswer(Question answeredQuestion, TelegramChoice answer)
+		//public TelegramAnswer(Question answeredQuestion, TelegramChoice answer)
+		//{
+		//	AnsweredQuestion = answeredQuestion;
+		//	AnswerDateUtc = DateTime.UtcNow;
+		//	PickedChoice = answer;
+		//}
+		public TelegramAnswer(Question answeredQuestion, TelegramMessage message)
 		{
 			AnsweredQuestion = answeredQuestion;
 			AnswerDateUtc = DateTime.UtcNow;
-			PickedChoice = answer;
+			if (message.PickedChoice != null)
+				PickedChoice = message.PickedChoice;
+			else if (message.IsPhoto)
+				Answer = message.Message.Photo[0].FileId;
 		}
-
 		public bool EnforceConstraints()
 		{
 			if (AnsweredQuestion == null)

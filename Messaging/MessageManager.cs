@@ -68,7 +68,7 @@ namespace Telegram.Messaging.Messaging
 		public event EventHandler<SurveyCompletedEventArgs> OnSurveyCompleted;
 		public event EventHandler<PayReceivedEventArgs> OnPayPressed;
 		public event EventHandler<InvalidInteractionEventArgs> OnInvalidInteraction;
-		public event EventHandler<DiceRolledEventArgs> OnDiceRolled;
+		//public event EventHandler<DiceRolledEventArgs> OnDiceRolled;
 
 		public event AsyncEventHandler<CommandReceivedEventArgs> OnCommandAsync;
 		public event AsyncEventHandler<QuestionAnsweredEventArgs> OnQuestionAnsweredAsync;
@@ -78,7 +78,7 @@ namespace Telegram.Messaging.Messaging
 		public event AsyncEventHandler<SurveyCompletedEventArgs> OnSurveyCompletedAsync;
 		public event AsyncEventHandler<PayReceivedEventArgs> OnPayPressedAsync;
 		public event AsyncEventHandler<InvalidInteractionEventArgs> OnInvalidInteractionAsync;
-		public event AsyncEventHandler<DiceRolledEventArgs> OnDiceRolledAsync;
+		//public event AsyncEventHandler<DiceRolledEventArgs> OnDiceRolledAsync;
 
 
 		/// <summary>
@@ -270,31 +270,31 @@ namespace Telegram.Messaging.Messaging
 			}
 			await Task.WhenAll(tasks);
 		}
-		async Task RaiseOnDiceRolled(DiceRolledEventArgs e)
-		{
-			e.Manager = this;
-			List<Task> tasks = new List<Task>();
-			if (OnDiceRolled != null)
-				Array.ForEach(OnDiceRolled.GetInvocationList(), (d) => configureAndAddTask(tasks, d, e));
-			if (OnDiceRolledAsync != null)
-				Array.ForEach(OnDiceRolledAsync.GetInvocationList(), (d) => configureAndAddTask(tasks, d, e));
-			if (e?.OriginatingQuestion?.CallbackHandler != null)
-			{
-				var callbackHandler = GetHandler(e.OriginatingQuestion.CallbackHandler) as QuestionAnswerCallbackHandler;
-				var t = callbackHandler.OnDiceRolledAsync(this, e);
-				t.ConfigureAwait(false);
-				tasks.Add(t);
-			}
-			if (e?.OriginatingQuestion?.OnEventAsync != null)
-			{
-				var onEvent = GetDelegateOnTarget(e.OriginatingQuestion.OnEventAsync);
-				//Task t = Task.Run(() => onEvent(e));
-				Task t = onEvent(this, e);
-				t.ConfigureAwait(false);
-				tasks.Add(t);
-			}
-			await Task.WhenAll(tasks);
-		}
+		//async Task RaiseOnDiceRolled(DiceRolledEventArgs e)
+		//{
+		//	e.Manager = this;
+		//	List<Task> tasks = new List<Task>();
+		//	if (OnDiceRolled != null)
+		//		Array.ForEach(OnDiceRolled.GetInvocationList(), (d) => configureAndAddTask(tasks, d, e));
+		//	if (OnDiceRolledAsync != null)
+		//		Array.ForEach(OnDiceRolledAsync.GetInvocationList(), (d) => configureAndAddTask(tasks, d, e));
+		//	if (e?.OriginatingQuestion?.CallbackHandler != null)
+		//	{
+		//		var callbackHandler = GetHandler(e.OriginatingQuestion.CallbackHandler) as QuestionAnswerCallbackHandler;
+		//		var t = callbackHandler.OnDiceRolledAsync(this, e);
+		//		t.ConfigureAwait(false);
+		//		tasks.Add(t);
+		//	}
+		//	if (e?.OriginatingQuestion?.OnEventAsync != null)
+		//	{
+		//		var onEvent = GetDelegateOnTarget(e.OriginatingQuestion.OnEventAsync);
+		//		//Task t = Task.Run(() => onEvent(e));
+		//		Task t = onEvent(this, e);
+		//		t.ConfigureAwait(false);
+		//		tasks.Add(t);
+		//	}
+		//	await Task.WhenAll(tasks);
+		//}
 		async Task RaiseOnQuestionAnswered(QuestionAnsweredEventArgs e)
 		{
 			e.Manager = this;
@@ -641,9 +641,9 @@ namespace Telegram.Messaging.Messaging
 				}
 
 				// Create the answer descriptor
-				TelegramAnswer answer = null;
-				if (mostRecent != null && pickedChoice != null)
-					answer = new TelegramAnswer(mostRecent, pickedChoice);
+				TelegramAnswer? answer = null;
+				if (mostRecent != null && (pickedChoice != null || CurrentMessage.IsPhoto))
+					answer = new TelegramAnswer(mostRecent, CurrentMessage);
 				else if (mostRecent != null)
 					answer = new TelegramAnswer(mostRecent, CurrentMessage.OriginalInputText);
 
@@ -703,12 +703,12 @@ namespace Telegram.Messaging.Messaging
 			}
 			mostRecent.AddAnswer(answer);
 			await mostRecent.UpdateQuestion();
-			if (CurrentMessage.IsDice)
-			{
-				await RaiseOnDiceRolled(new DiceRolledEventArgs() { TelegramMessage = CurrentMessage, Value = CurrentMessage.Message.Dice.Value, OriginatingQuestion = mostRecent });
-			}
-			else
-				await RaiseOnQuestionAnswered(new QuestionAnsweredEventArgs() { Answer = answer, AnsweredQuestion = mostRecent });
+			//if (CurrentMessage.IsDice)
+			//{
+			//	await RaiseOnDiceRolled(new DiceRolledEventArgs() { TelegramMessage = CurrentMessage, Value = CurrentMessage.Message.Dice.Value, OriginatingQuestion = mostRecent });
+			//}
+			//else
+			await RaiseOnQuestionAnswered(new QuestionAnsweredEventArgs() { Answer = answer, AnsweredQuestion = mostRecent });
 		}
 
 		private async Task processSystemChoice(Question mostRecent, TelegramAnswer answer)
@@ -899,7 +899,6 @@ namespace Telegram.Messaging.Messaging
 			await CurrentSurvey.UpdateSurvey(true);
 			return q;
 		}
-
 		/// <summary>
 		/// Creates a question which takes command as answers
 		/// </summary>
@@ -994,11 +993,14 @@ namespace Telegram.Messaging.Messaging
 		/// The newly generated question will have InternalId = question.InternalId + 1. If the question is reused, the InternalId will not be changed. 
 		/// </summary>
 		/// <param name="question">the question that must show a follow up message</param>
-		/// <param name="text">The question text to display. Pass null to keep the previous one, pass empty string to remove it.</param>
 		/// <param name="followUp">The follow up text to display. Pass null to keep the previous one, pass empty string to remove it.</param>
 		/// <param name="defAnswers">Pass null to keep the previous choices, changing the system commands only. Pass an empty list to remove all the choices and keep the system commands. 
 		/// Pass a populated list to display the choices on the list + the eventually generated system commands.</param>
-		public async Task<Question> FollowUp(Question question, string followUp, string newQuestionText = null, bool reuseQuestion = true, List<TelegramChoice> defAnswers = null,
+		public async Task<Question> FollowUp(Question question, string followUp, string newQuestionText = null, bool reuseQuestion = true,
+												//bool pickOnlyDefAnswers = false,
+												//FieldTypes type = FieldTypes.String,
+												List<TelegramChoice>? defAnswers = null,
+												//List<TelegramConstraint>? defConstraints = null,
 												int currentPage = 0, bool hasNextPage = false, bool hasPrevPage = false,
 												bool showSkip = false, bool showBack = false, bool showCancel = false, bool? expectsCommand = null)
 		{
@@ -1319,7 +1321,25 @@ namespace Telegram.Messaging.Messaging
 				semSend.Release();
 			}
 		}
+		/// <summary>
+		/// Deletes the current question and send the previous one
+		/// </summary>
+		/// <returns></returns>
+		public async Task<Message?> SendPreviousQuestion(int howMany = 1)
+		{
+			if (CurrentSurvey == null || howMany + 1 > CurrentSurvey.Questions.Count) return null;
 
+			for (int i = 0; i < howMany; i++)
+			{
+				var toDel = CurrentSurvey.Questions[CurrentSurvey.Questions.Count - 1];
+				CurrentSurvey.Questions.Remove(toDel);
+				await toDel.Delete();
+			}
+
+			CurrentSurvey.MostRecentQuestion.IsCompleted = false;
+
+			return await SendQuestion(CurrentSurvey.MostRecentQuestion);
+		}
 		/// <summary>
 		/// Send a previously created question and creates an inline keyboard that accepts answers based on the default answers.
 		/// </summary>
@@ -1374,8 +1394,6 @@ namespace Telegram.Messaging.Messaging
 		/// <param name="tClient"></param>
 		/// <param name="mngr"></param>
 		/// <param name="question"></param>
-		/// <param name="updating"></param>
-		/// <param name="isCallbackQuery"></param>
 		/// <returns></returns>
 		private static async Task<Message?> doSendQuestion(ITelegramBotClient tClient, MessageManager mngr, Question question)
 		{
@@ -1483,7 +1501,7 @@ namespace Telegram.Messaging.Messaging
 				try
 				{
 					if (question.ImageUrl != null)
-						sent = await tClient.SendPhotoAsync(mngr.ChatId, new InputOnlineFile(new Uri(question.ImageUrl))
+						sent = await tClient.SendPhotoAsync(mngr.ChatId, new InputOnlineFile(question.ImageUrl)
 							, qText
 							, replyMarkup: keyboard
 							, parseMode: ParseMode.Html
@@ -1632,5 +1650,6 @@ namespace Telegram.Messaging.Messaging
 		{
 			return $"{TId}:{UsernameOrFirstName}";
 		}
+
 	}
 }

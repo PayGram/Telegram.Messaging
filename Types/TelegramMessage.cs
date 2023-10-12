@@ -19,10 +19,11 @@ namespace Telegram.Messaging.Types
 		public string Username { get { return From?.Username; } }
 		public long ChatId { get => Query?.Message?.Chat?.Id ?? Message?.Chat?.Id ?? 0; }
 		public bool IsDice { get => Message?.Dice != null; }
-		/// <summary>
-		/// if the message represents a callback, gets the message id that originated the callback, otherwise 0
-		/// </summary>
-		public long OriginatingMessageId => Query?.Message?.MessageId ?? 0;
+        public bool IsPhoto => Message?.Photo != null;
+        /// <summary>
+        /// if the message represents a callback, gets the message id that originated the callback, otherwise 0
+        /// </summary>
+        public long OriginatingMessageId => Query?.Message?.MessageId ?? 0;
 
 		public bool CallbackQueryAnswered { get; set; }
 
