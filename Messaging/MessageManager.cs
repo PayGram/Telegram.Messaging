@@ -109,6 +109,7 @@ namespace Telegram.Messaging.Messaging
 			BotToken = botToken;
 			tClient = client ?? new TelegramBotClient(botToken);
 			_tid = userId;
+			recentMessageSent = true; // will cause the dashboard to reload
 			setEventsCallback();
 		}
 		/// <summary>
