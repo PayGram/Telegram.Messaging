@@ -5,11 +5,11 @@ namespace Telegram.Messaging.Db
 	public class Survey
 	{
 
-#if RELEASE
-		public const int SURVEY_EXPIRES_AFTER_SECONDS = 60 * 24 * 30 * 60;
-#else
-		public const int SURVEY_EXPIRES_AFTER_SECONDS = 30 * 60;
-#endif
+//#if RELEASE
+//		public const int SURVEY_EXPIRES_AFTER_SECONDS = 60 * 24 * 30 * 60;
+//#else
+//		public const int SURVEY_EXPIRES_AFTER_SECONDS = 30 * 60;
+//#endif
 
 		public int Id { get; set; }
 		/// <summary>
@@ -42,7 +42,7 @@ namespace Telegram.Messaging.Db
 			{
 				var ss = await (from survs in db.Surveys.Include(x => x.Questions)//.ThenInclude(y => y.FieldType)
 								where survs.IsActive && survs.IsCompleted == false && survs.IsCancelled == false
-								&& survs.LastInteractionUtc.AddSeconds(SURVEY_EXPIRES_AFTER_SECONDS) > DateTime.UtcNow
+								//&& survs.LastInteractionUtc.AddSeconds(SURVEY_EXPIRES_AFTER_SECONDS) > DateTime.UtcNow
 								&& telegramUserId == survs.TelegramUserId
 								select survs).OrderByDescending(x => x.TelegramMessageId).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
 				if (ss != null)

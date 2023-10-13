@@ -51,7 +51,7 @@ namespace Telegram.Messaging.Types
 			if (string.IsNullOrWhiteSpace(inputText)) return;
 
 			PickedChoice = TelegramChoice.FromJsonSpecial(inputText);
-			if (PickedChoice != null)
+			if (PickedChoice != null && PickedChoice.Value != null) // Value == null happens when a json is entered in the text
 				inputText = PickedChoice.Value;
 
 			if (inputText[0] == '/')
