@@ -35,7 +35,7 @@ namespace Telegram.Messaging.Migrations
 
                     b.HasAlternateKey("Name");
 
-                    b.ToTable("FieldTypes");
+                    b.ToTable("FieldTypes", (string)null);
                 });
 
             modelBuilder.Entity("Telegram.Messaging.Db.Question", b =>
@@ -109,7 +109,7 @@ namespace Telegram.Messaging.Migrations
 
                     b.HasIndex("SurveyId");
 
-                    b.ToTable("Questions");
+                    b.ToTable("Questions", (string)null);
                 });
 
             modelBuilder.Entity("Telegram.Messaging.Db.Survey", b =>
@@ -143,7 +143,7 @@ namespace Telegram.Messaging.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Surveys");
+                    b.ToTable("Surveys", (string)null);
                 });
 
             modelBuilder.Entity("Telegram.Messaging.Db.Question", b =>
