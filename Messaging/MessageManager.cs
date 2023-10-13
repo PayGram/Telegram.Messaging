@@ -1582,13 +1582,12 @@ namespace Telegram.Messaging.Messaging
 		/// Sends a message to the chat with the user
 		/// </summary>
 		/// <param name="message">The message to send, html is accepted</param>
-		/// <param name="removeMenu">If set to true, removes any system menu shown to the user after the message has been sen</param>
 		/// <returns></returns>
 		public async Task<Message?> SendMessage(string message, IReplyMarkup? markup = null, bool? disableWebPagePreview = false)
 		{
 			return await SendMessage(message, ChatId, markup, disableWebPagePreview);
 		}
-		public async Task<Message?> SendMessage(string message, long tid, IReplyMarkup? markup = null, bool? disableWebPagePreview = false)
+		private async Task<Message?> SendMessage(string message, long tid, IReplyMarkup? markup = null, bool? disableWebPagePreview = false)
 		{
 			try
 			{
