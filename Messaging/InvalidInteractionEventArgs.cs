@@ -7,7 +7,7 @@ namespace Telegram.Messaging.Messaging
 	{
 		public TelegramMessage TelegramMessage { get; internal set; }
 		public string Answer { get; internal set; }
-		public TelegramChoice PickedChoice { get; internal set; }
+		public TelegramChoice? PickedChoice { get; internal set; }
 		public Question OriginatingQuestion { get; internal set; }
 		public InvalidInteractionEventArgs() : base(MessageEventTypes.InvalidInteraction)
 		{

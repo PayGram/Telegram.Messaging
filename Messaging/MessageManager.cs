@@ -37,7 +37,7 @@ namespace Telegram.Messaging.Messaging
 		/// <summary>
 		/// The current flow of questions and answers with the client
 		/// </summary>
-		public Survey CurrentSurvey { get; private set; }
+		public Survey? CurrentSurvey { get; private set; }
 		public string BotToken { get; private set; }
 		readonly ITelegramBotClient tClient;
 		long _chatId;
@@ -58,6 +58,9 @@ namespace Telegram.Messaging.Messaging
 		/// The telegram ID of the user with whom we are interacting or 0 if not found
 		/// </summary>
 		public long TId => _tid != 0 ? _tid : CurrentMessage?.From?.Id ?? 0;
+
+		/// <summary>Represents how many messages have been sent after the dashboard.  Access to this variable must be synchronized with semSend</summary>
+		int recentMessageSent;
 
 		public event EventHandler<CommandReceivedEventArgs> OnCommand;
 		public event EventHandler<QuestionAnsweredEventArgs> OnQuestionAnswered;
@@ -109,7 +112,7 @@ namespace Telegram.Messaging.Messaging
 			BotToken = botToken;
 			tClient = client ?? new TelegramBotClient(botToken);
 			_tid = userId;
-			recentMessageSent = true; // will cause the dashboard to reload
+			recentMessageSent = 1; // will cause the dashboard to reload
 			setEventsCallback();
 		}
 		/// <summary>
@@ -523,7 +526,7 @@ namespace Telegram.Messaging.Messaging
 		/// </summary>
 		/// <param name="upd">The update to process</param>
 		/// <returns>The TelegramMessage describing the communication flow with the user</returns>
-		public async Task<TelegramMessage> ProcessUpdate(Update upd)
+		public async Task<TelegramMessage?> ProcessUpdate(Update upd)
 		{
 			if (upd == null) return null;
 
@@ -542,7 +545,7 @@ namespace Telegram.Messaging.Messaging
 		/// </summary>
 		/// <param name="message">The message coming from telegram</param>
 		/// <returns></returns>
-		public async Task<TelegramMessage> ProcessUpdate(Message message)
+		public async Task<TelegramMessage?> ProcessUpdate(Message message)
 		{
 			CurrentMessage = new TelegramMessage(message, BotName, ValidCommands.Select(x => x.Name).ToArray());
 			return await ProcessCurrentMessage();
@@ -567,7 +570,7 @@ namespace Telegram.Messaging.Messaging
 		/// </summary>
 		/// <param name="message">The CallbackQuery coming from telgram</param>
 		/// <returns></returns>
-		public async Task<TelegramMessage> ProcessUpdate(CallbackQuery message)
+		public async Task<TelegramMessage?> ProcessUpdate(CallbackQuery message)
 		{
 			CurrentMessage = new TelegramMessage(message, BotName, ValidCommands.Select(x => x.Name).ToArray());
 			return await ProcessCurrentMessage();
@@ -590,8 +593,11 @@ namespace Telegram.Messaging.Messaging
 			{
 				// let's see if there is an open survey
 				CurrentSurvey = await Survey.GetCurrentSurvey(ChatId);
+				if (CurrentSurvey == null)//user is new or db was cleaned, let's create a new survey for him
+					await CreateNewSurvey();
+
 				// the question that was supposedly answered
-				Question mostRecent = CurrentSurvey?.MostRecentQuestion;
+				Question? mostRecent = CurrentSurvey?.MostRecentQuestion;
 
 				TelegramChoice pickedChoice = CurrentMessage.PickedChoice;
 				long originatingMsgId = CurrentMessage.OriginatingMessageId != 0 ? CurrentMessage.OriginatingMessageId : DashboardMsgId;
@@ -608,26 +614,24 @@ namespace Telegram.Messaging.Messaging
 					}
 				}
 
-
-				bool currentSurveyIsNull = CurrentSurvey == null;
+				//bool currentSurveyIsNull = CurrentSurvey == null;
 				bool originatingQuestIdMismatch = mostRecent != null && mostRecent.Id != originatingQuestId;
 				bool originatingMsgIdMismatch = CurrentSurvey != null && CurrentSurvey.TelegramMessageId != originatingMsgId;
-				bool dashboardScrolledUp = CurrentMessage.IsCallbackQuery == false || recentMessageSent;
-
+				bool dashboardScrolledUp = CurrentMessage.IsCallbackQuery == false || recentMessageSent > 0;
 
 				// if the following happens, we must delete the message, it's too old or it scrolled up or it mismatch with the current situation
-				if (originatingMsgId != 0 && (currentSurveyIsNull || dashboardScrolledUp || originatingQuestIdMismatch || originatingMsgIdMismatch))
+				if (originatingMsgId != 0 && (/*currentSurveyIsNull ||*/ dashboardScrolledUp || originatingQuestIdMismatch || originatingMsgIdMismatch))
 				{
 					log.Debug($"{this} originatingMsgId: {originatingMsgId}, mostRecent.Id: {mostRecent?.Id}, originatingQuestId: {originatingQuestId}, CurrentSurvey.TelegramMessageId: {CurrentSurvey?.TelegramMessageId}, originatingMsgId: {originatingMsgId}");
-					log.Debug($"{this}. removing clicked message. originatingMsgId: {originatingMsgId}, currentSurveyIsNull: {currentSurveyIsNull}, dashboardScrolledUp: {dashboardScrolledUp}, originatingQuestIdMismatch {originatingQuestIdMismatch}, originatingMsgIdMismatch: {originatingMsgIdMismatch}.");
+					log.Debug($"{this}. removing clicked message. originatingMsgId: {originatingMsgId}, dashboardScrolledUp: {dashboardScrolledUp}, originatingQuestIdMismatch {originatingQuestIdMismatch}, originatingMsgIdMismatch: {originatingMsgIdMismatch}.");
 					await RemoveMessageAsync(originatingMsgId);
 				}
 
 				// something did not go as expected
-				if (currentSurveyIsNull || originatingQuestIdMismatch || originatingMsgIdMismatch)
+				if (/*currentSurveyIsNull ||*/ originatingQuestIdMismatch || originatingMsgIdMismatch)
 				{
 					log.Debug($"{this} originatingMsgId: {originatingMsgId}, mostRecent.Id: {mostRecent?.Id}, originatingQuestId: {originatingQuestId}, CurrentSurvey.TelegramMessageId: {CurrentSurvey?.TelegramMessageId}, originatingMsgId: {originatingMsgId}");
-					log.Debug($"{this}. Invalid answer, originatingQuestIdMismatch: {originatingQuestIdMismatch}, originatingMsgIdMismatch: {originatingMsgIdMismatch}, given or expired survey: {currentSurveyIsNull}. Raise invalid interaction and then process eventual commands");
+					log.Debug($"{this}. Invalid answer, originatingQuestIdMismatch: {originatingQuestIdMismatch}, originatingMsgIdMismatch: {originatingMsgIdMismatch}. Raise invalid interaction and then process eventual commands");
 					await RaiseOnInvalidInteraction(new InvalidInteractionEventArgs()
 					{
 						TelegramMessage = CurrentMessage,
@@ -805,7 +809,7 @@ namespace Telegram.Messaging.Messaging
 			}
 		}
 
-		private async Task processCommand(Question mostRecent, TelegramAnswer answer)
+		private async Task processCommand(Question? mostRecent, TelegramAnswer? answer)
 		{
 			if (mostRecent != null && (mostRecent.ExpectsCommand == false || mostRecent.IsCompleted))
 			{
@@ -1515,7 +1519,7 @@ namespace Telegram.Messaging.Messaging
 								, parseMode: ParseMode.Html
 								, disableWebPagePreview: question.DisableWebPagePreview);
 
-					mngr.recentMessageSent = false;
+					mngr.recentMessageSent = 0;
 					log.Debug($"{mngr} sent.Id: '{sent.MessageId}' - survid: {surv.Id}. q: {question}");
 				}
 				catch (Exception exx)
@@ -1576,8 +1580,6 @@ namespace Telegram.Messaging.Messaging
 			return q;
 		}
 
-		/// <summary>  Access to this variable must be synchronized with semSend</summary>
-		bool recentMessageSent = false;
 
 		/// <summary>
 		/// Sends a message to the chat with the user
@@ -1594,7 +1596,7 @@ namespace Telegram.Messaging.Messaging
 			{
 				semSend.WaitOne();
 				var m = await tClient.SendTextMessageAsync(new ChatId(tid), message, parseMode: ParseMode.Html, replyMarkup: markup, disableWebPagePreview: disableWebPagePreview);
-				recentMessageSent = true;
+				recentMessageSent++;
 				return m;
 			}
 			catch (Exception ex)
@@ -1613,7 +1615,7 @@ namespace Telegram.Messaging.Messaging
 			{
 				semSend.WaitOne();
 				var m = await tClient.SendPhotoAsync(new ChatId(ChatId), new InputOnlineFile(stream), caption);
-				recentMessageSent = true;
+				recentMessageSent++;
 				return m;
 			}
 			catch (Exception ex)

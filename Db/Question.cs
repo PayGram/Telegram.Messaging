@@ -311,7 +311,7 @@ namespace Telegram.Messaging.Db
 			return $"{Id}|{InternalId}|{SurveyId}|{FieldTypeId}|{IsCompleted}|{IsMandatory}|{ExpectsCommand}|{QuestionText}|{FollowUp}";
 		}
 
-		public void AddDefaultAnswer(string value, string label = null)
+		public void AddDefaultAnswer(string value, string? label = null)
 		{
 			if (string.IsNullOrWhiteSpace(value))
 				return;
