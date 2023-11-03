@@ -23,7 +23,11 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
     <PackageReference Include="Telegram.Bot" Version="18.0.0" />
   </ItemGroup>
-
+	<PropertyGroup>
+		<RepositoryUrl>https://github.com/PayGram/Telegram.Messaging</RepositoryUrl>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Version>1.0.5</Version>
+	</PropertyGroup>
   <ItemGroup>
     <Folder Include="Migrations\" />
   </ItemGroup>
