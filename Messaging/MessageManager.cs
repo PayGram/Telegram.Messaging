@@ -1079,22 +1079,21 @@ namespace Telegram.Messaging.Messaging
         /// Marks the current survey as completed and then sets it to null
         /// </summary>
         /// <returns></returns>
-        public async Task<List<TelegramAnswer>?> CompleteSurvey()
+        public async Task CompleteSurvey()
         {
-            if (CurrentSurvey == null) return null;
+            if (CurrentSurvey == null) return;
             CurrentSurvey.IsCompleted = true;
             CurrentSurvey.IsActive = false;
             await CurrentSurvey.UpdateSurvey(false);
 
-            var answers = (from questions in CurrentSurvey.Questions
-                           select questions.LastAnswer).ToList();
+            //var answers = (from questions in CurrentSurvey.Questions
+            //               select questions.LastAnswer).ToList();
 
             var tmpSrv = CurrentSurvey;
 
-            await RaiseOnSurveyCompleted(new SurveyCompletedEventArgs() { Survey = tmpSrv, GivenAnswers = answers });
+            await RaiseOnSurveyCompleted(new SurveyCompletedEventArgs() { Survey = tmpSrv, GivenAnswers = CurrentSurvey.LastAnswers });
 
             CurrentSurvey = null;
-            return answers;
         }
 
         /// <summary>

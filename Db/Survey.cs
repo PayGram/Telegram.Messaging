@@ -1,15 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
+using Telegram.Messaging.Types;
 
 namespace Telegram.Messaging.Db
 {
 	public class Survey
 	{
 
-//#if RELEASE
-//		public const int SURVEY_EXPIRES_AFTER_SECONDS = 60 * 24 * 30 * 60;
-//#else
-//		public const int SURVEY_EXPIRES_AFTER_SECONDS = 30 * 60;
-//#endif
+		//#if RELEASE
+		//		public const int SURVEY_EXPIRES_AFTER_SECONDS = 60 * 24 * 30 * 60;
+		//#else
+		//		public const int SURVEY_EXPIRES_AFTER_SECONDS = 30 * 60;
+		//#endif
 
 		public int Id { get; set; }
 		/// <summary>
@@ -24,7 +26,8 @@ namespace Telegram.Messaging.Db
 		public DateTime CreatedUtc { get; set; }
 		public DateTime LastInteractionUtc { get; set; }
 		public List<Question> Questions { get; set; }
-
+		[NotMapped]
+		public List<TelegramAnswer> LastAnswers => Questions?.Where(x => x.LastAnswer != null).Select(x => x.LastAnswer!).ToList() ?? new();
 		public Survey()
 		{
 			Questions = new List<Question>();
