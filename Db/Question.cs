@@ -149,7 +149,7 @@ namespace Telegram.Messaging.Db
 				{
 					if (isStatic)
 					{
-						_onEventAsync = (AsyncEventHandler<MessagingEventArgs>)Delegate.CreateDelegate(typeof(AsyncEventHandler<MessagingEventArgs>), t, method);
+						_onEventAsync = (AsyncEventHandler<MessagingEventArgs>)Delegate.CreateDelegate(typeof(AsyncEventHandler<MessagingEventArgs>), t, method, true);
 					}
 					else
 					{
@@ -166,7 +166,7 @@ namespace Telegram.Messaging.Db
 				}
 				catch (Exception ex)
 				{
-					log.Debug($"Error creating delegate OnEvent. If target method changed from static to non-static, it is normal. {typeAndMethod}", ex);
+					log.Debug($"QID: {Id} - {value} - Error creating delegate OnEvent. If target method changed from static to non-static, or the method was renamed, it is normal. - {QuestionText} ", ex);
 				}
 			}
 		}
