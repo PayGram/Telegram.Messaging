@@ -18,6 +18,9 @@ namespace Telegram.Messaging.Messaging
 
 	public class MessageManager
 	{
+		#region Localization 
+		const string MESSAGE_MANAGER_USE_NEW_DASHBOARD = "MessageManagerUseNewDashboard";
+		#endregion
 		static readonly ILog log = LogManager.GetLogger(typeof(MessageManager));
 
 		/// <summary>
@@ -1258,7 +1261,7 @@ namespace Telegram.Messaging.Messaging
 				//log.Debug($"{TId}:{UsernameOrFirstName}. can't delete message {originatingMsgId}", e);
 				try
 				{
-					await tClient.EditMessageTextAsync(ChatId, (int)originatingMsgId, "Please use the new dashboard below.");
+					await tClient.EditMessageTextAsync(ChatId, (int)originatingMsgId, MESSAGE_MANAGER_USE_NEW_DASHBOARD.Translate(Language));
 				}
 				catch (Exception ex)
 				{
@@ -1267,7 +1270,7 @@ namespace Telegram.Messaging.Messaging
 					//try to edit the caption, maybe the message is not a text message
 					try
 					{
-						await tClient.EditMessageCaptionAsync(ChatId, (int)originatingMsgId, "Please use the new dashboard below.");
+						await tClient.EditMessageCaptionAsync(ChatId, (int)originatingMsgId, MESSAGE_MANAGER_USE_NEW_DASHBOARD.Translate(Language));
 					}
 					catch (Exception exx)
 					{
