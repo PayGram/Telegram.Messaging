@@ -1,5 +1,6 @@
 ﻿using log4net;
 using Newtonsoft.Json;
+using System.Web;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
@@ -51,8 +52,10 @@ namespace Telegram.Messaging.Messaging
 
 		/// <summary>
 		/// The username or the first name or an empty string if they are not available of the user with whom we are interacting
+		/// gets an empty string if null
 		/// </summary>
 		public string UsernameOrFirstName => CurrentMessage?.From?.Username ?? CurrentMessage?.From?.FirstName ?? "";
+		public string UsernameOrFirstNameHtmlEncoded => HttpUtility.HtmlEncode(UsernameOrFirstName);
 
 		readonly long _tid;
 
