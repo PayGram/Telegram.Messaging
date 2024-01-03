@@ -1,4 +1,5 @@
 ﻿using log4net;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Web;
 using Telegram.Bot;
@@ -42,7 +43,7 @@ namespace Telegram.Messaging.Messaging
 		public Survey? CurrentSurvey { get; private set; }
 		public string? Language { get; set; }
 		public string BotToken { get; private set; }
-		readonly ITelegramBotClient tClient;
+		//readonly ITelegramBotClient tClient;
 		long _chatId;
 		/// <summary>
 		/// The Chat identifier where this Manager is addressing the messages. It has always precedence on the CurrentMessage.Chat.Id
@@ -88,6 +89,7 @@ namespace Telegram.Messaging.Messaging
 		public event AsyncEventHandler<InvalidInteractionEventArgs> OnInvalidInteractionAsync;
 		//public event AsyncEventHandler<DiceRolledEventArgs> OnDiceRolledAsync;
 
+		IServiceProvider serviceProvider;
 
 		/// <summary>
 		/// Creates a new MessageManager for the bot
@@ -109,13 +111,14 @@ namespace Telegram.Messaging.Messaging
 		/// <param name="client">The client to use to reply to users
 		/// <param name="chatId">The chat id where this manager will address the messages. If it is left to its default value, bot will only be able to reply
 		/// messages after an incoming message is processed</param>
-		public MessageManager(string botName, string botToken, ITelegramBotClient client, long chatId = 0, long userId = 0)
+		public MessageManager(string botName, string botToken, IServiceProvider serviceProvider, long chatId = 0, long userId = 0)
 		{
 			ValidCommands = new();
 			ChatId = chatId;
 			BotName = botName;
 			BotToken = botToken;
-			tClient = client ?? new TelegramBotClient(botToken);
+			//tClient = client ?? new TelegramBotClient(botToken);
+			this.serviceProvider = serviceProvider;
 			_tid = userId;
 			recentMessageSent = 1; // will cause the dashboard to reload
 			setEventsCallback();
@@ -1250,6 +1253,10 @@ namespace Telegram.Messaging.Messaging
 
 		private async Task RemoveMessageAsync(long originatingMsgId)
 		{
+			using var scope = serviceProvider.CreateScope();
+
+			var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>(); 
+			
 			try
 			{
 				semSend.WaitOne();
@@ -1295,7 +1302,9 @@ namespace Telegram.Messaging.Messaging
 		public async Task UpdateShownQuestion(Question currQuestion)
 		{
 			if (currQuestion == null) return;
+			using var scope = serviceProvider.CreateScope();
 
+			var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
 			semSend.WaitOne();
 			try
 			{
@@ -1366,6 +1375,10 @@ namespace Telegram.Messaging.Messaging
 
 			try
 			{
+				using var scope = serviceProvider.CreateScope();
+
+				var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>(); 
+				
 				return await doSendQuestion(tClient, this, question);
 			}
 			catch (Exception e)
@@ -1381,6 +1394,10 @@ namespace Telegram.Messaging.Messaging
 
 		public async Task AnswerCurrentCallbackQueryAsync(string? msg = null, bool? showAlert = null, string? url = null)
 		{
+			using var scope = serviceProvider.CreateScope();
+
+			var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>(); 
+			
 			if (CurrentMessage?.IsCallbackQuery == true && CurrentMessage.CallbackQueryAnswered == false)
 				try
 				{
@@ -1596,6 +1613,10 @@ namespace Telegram.Messaging.Messaging
 		{
 			try
 			{
+				using var scope = serviceProvider.CreateScope();
+
+				var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>(); 
+				
 				semSend.WaitOne();
 				var m = await tClient.SendTextMessageAsync(new ChatId(tid), message, parseMode: ParseMode.Html, replyMarkup: markup, disableWebPagePreview: disableWebPagePreview);
 				recentMessageSent++;
@@ -1615,6 +1636,10 @@ namespace Telegram.Messaging.Messaging
 		{
 			try
 			{
+				using var scope = serviceProvider.CreateScope();
+
+				var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>(); 
+				
 				semSend.WaitOne();
 				var m = await tClient.SendPhotoAsync(new ChatId(ChatId), new InputOnlineFile(stream), caption);
 				recentMessageSent++;
