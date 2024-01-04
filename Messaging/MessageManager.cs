@@ -520,7 +520,7 @@ namespace Telegram.Messaging.Messaging
 		{
 			try
 			{
-				bool b = m.WaitOne(1);
+				bool b = m.WaitOne(50);
 				return b;
 			}
 			catch
@@ -632,8 +632,11 @@ namespace Telegram.Messaging.Messaging
 				{
 					log.Debug($"{this} originatingMsgId: {originatingMsgId}, mostRecent.Id: {mostRecent?.Id}, originatingQuestId: {originatingQuestId}, CurrentSurvey.TelegramMessageId: {CurrentSurvey?.TelegramMessageId}, originatingMsgId: {originatingMsgId}");
 					log.Debug($"{this}. removing clicked message. originatingMsgId: {originatingMsgId}, dashboardScrolledUp: {dashboardScrolledUp}, originatingQuestIdMismatch {originatingQuestIdMismatch}, originatingMsgIdMismatch: {originatingMsgIdMismatch}.");
-					await RemoveMessageAsync(originatingMsgId);
+					if (await RemoveMessageAsync(originatingMsgId) == false)
+						CurrentMessage.AddCallbackQueryMessage(MESSAGE_MANAGER_USE_NEW_DASHBOARD.Translate(Language));
 				}
+
+				//CurrentMessage.AddCallbackQueryMessage("hello world");
 
 				// something did not go as expected
 				if (/*currentSurveyIsNull ||*/ originatingQuestIdMismatch || originatingMsgIdMismatch)
@@ -1250,13 +1253,18 @@ namespace Telegram.Messaging.Messaging
 		#region sending
 
 		readonly Semaphore semSend = new Semaphore(1, 1);
-
-		private async Task RemoveMessageAsync(long originatingMsgId)
+		/// <summary>
+		/// Removes or updates (if removal could not be made because too old) a message and returns true if the operation completes.
+		/// Returns false if there was an unexpected error from telegram
+		/// </summary>
+		/// <param name="originatingMsgId"></param>
+		/// <returns></returns>
+		private async Task<bool> RemoveMessageAsync(long originatingMsgId)
 		{
 			using var scope = serviceProvider.CreateScope();
 
-			var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>(); 
-			
+			var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
+
 			try
 			{
 				semSend.WaitOne();
@@ -1268,6 +1276,9 @@ namespace Telegram.Messaging.Messaging
 			}
 			catch (Exception e)
 			{
+				if (e.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+					return true; //maybe already deleted?
+
 				//log.Debug($"{TId}:{UsernameOrFirstName}. can't delete message {originatingMsgId}", e);
 				try
 				{
@@ -1277,6 +1288,9 @@ namespace Telegram.Messaging.Messaging
 				{
 					//	log.Debug($"{TId}:{UsernameOrFirstName}. editing message: {originatingMsgId}, {CurrentSurvey}", ex);
 
+					if (ex.Message.Contains("is not modified", StringComparison.OrdinalIgnoreCase))
+						return false;
+
 					//try to edit the caption, maybe the message is not a text message
 					try
 					{
@@ -1284,7 +1298,11 @@ namespace Telegram.Messaging.Messaging
 					}
 					catch (Exception exx)
 					{
+						if (ex.Message.Contains("is not modified", StringComparison.OrdinalIgnoreCase))
+							return false;
+
 						log.Warn($"{this} - Could not delete, edit text and edit caption. {e.Message}\r\n{ex.Message}", exx);
+						return false;
 					}
 				}
 			}
@@ -1292,6 +1310,7 @@ namespace Telegram.Messaging.Messaging
 			{
 				semSend.Release();
 			}
+			return true;
 		}
 
 		/// <summary>
@@ -1377,8 +1396,8 @@ namespace Telegram.Messaging.Messaging
 			{
 				using var scope = serviceProvider.CreateScope();
 
-				var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>(); 
-				
+				var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
+
 				return await doSendQuestion(tClient, this, question);
 			}
 			catch (Exception e)
@@ -1392,20 +1411,21 @@ namespace Telegram.Messaging.Messaging
 			}
 		}
 
-		public async Task AnswerCurrentCallbackQueryAsync(string? msg = null, bool? showAlert = null, string? url = null)
+		public async Task AnswerCurrentCallbackQueryAsync()
 		{
 			using var scope = serviceProvider.CreateScope();
 
-			var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>(); 
-			
+			var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
+
 			if (CurrentMessage?.IsCallbackQuery == true && CurrentMessage.CallbackQueryAnswered == false)
 				try
 				{
+					string msg = CurrentMessage.CallbackQueryAnswer;
+					CurrentMessage.ClearCallbackQueryMessage();
 					CurrentMessage.CallbackQueryAnswered = true;
-					await tClient.AnswerCallbackQueryAsync(CurrentMessage.Query.Id, msg, showAlert, url);
+					await tClient.AnswerCallbackQueryAsync(CurrentMessage.Query.Id, msg, string.IsNullOrEmpty(msg) == false);
 				}
-				catch (Exception) { log.Debug($"{TId}:{UsernameOrFirstName}. Exception while updating the callbackquery for {CurrentMessage}-{CurrentMessage.Query.Id}"); }
-
+				catch (Exception e) { log.Debug($"{TId}:{UsernameOrFirstName}. Exception while updating the callbackquery for {CurrentMessage}-{CurrentMessage.Query.Id}", e); }
 		}
 
 		/// <summary>
@@ -1472,6 +1492,7 @@ namespace Telegram.Messaging.Messaging
 
 			if (string.IsNullOrWhiteSpace(question.ImageUrl) == false && mngr.DashboardMsgId != 0)
 			{
+				// otherwise we cant update this message with the new image
 				try { await tClient.DeleteMessageAsync(mngr.ChatId, mngr.DashboardMsgId); } catch { }
 				mngr.DashboardMsgId = 0;
 			}
@@ -1489,32 +1510,31 @@ namespace Telegram.Messaging.Messaging
 				}
 				catch (ApiRequestException ar)
 				{
-					var exMsg = ar.Message.ToLower();
-					if (exMsg.Contains("message is not modified"))
+					if (ar.Message.Contains("message is not modified", StringComparison.OrdinalIgnoreCase))
 					{
 						messageNotModified = true;
 						//Debug.WriteLine("message is not modified");
 					}
-					else if (exMsg.Contains("no text in the message"))
+					else if (ar.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
 					{
+						//nothing, we will send a new one. but it is a strange case. maybe the user clicked very fast and we receive the same callback and this message was deleted on a previous call
+					}
+					else if (ar.Message.Contains("no text in the message", StringComparison.OrdinalIgnoreCase))
+					{
+						// this case when trying to edit a photo
 						try
 						{
-							//await tClient.EditMessageMediaAsync(mngr.ChatId
-							//	, mngr.DashboardMsgId
-							//	, new InputOnlineFile(new Uri(question.ImageUrl))
-							//	, 
-							//	)
 							await tClient.DeleteMessageAsync(mngr.ChatId, mngr.DashboardMsgId);
 						}
 						catch { }
 					}
 					else
-						log.Error($"{mngr} - while editing msg.Id: '{mngr.DashboardMsgId}'. sending a new one. replyMarkup: {JsonConvert.SerializeObject(keyboard)}", ar);
+						log.Error($"{mngr} - while editing msg.Id: '{mngr.DashboardMsgId}'. sending a new one. qText: [{qText}] - replyMarkup: {JsonConvert.SerializeObject(keyboard)}", ar);
 				}
 				catch (Exception ex)
 				{
 					// that's strange
-					log.Error($"{mngr} could not update {mngr.DashboardMsgId}. Sending a new one", ex);
+					log.Error($"{mngr} could not update {mngr.DashboardMsgId}. qText: [{qText}] - replyMarkup: {JsonConvert.SerializeObject(keyboard)} - Sending a new one", ex);
 				}
 
 
@@ -1522,15 +1542,26 @@ namespace Telegram.Messaging.Messaging
 			{
 				// if the message couldn't be updated, it might because it was deleted or too long time has passed.
 				// in this case we send a new one
-				try
-				{
-					if (question.ImageUrl != null)
-						sent = await tClient.SendPhotoAsync(mngr.ChatId, new InputOnlineFile(question.ImageUrl)
+
+				if (string.IsNullOrWhiteSpace(question.ImageUrl) == false)
+					try
+					{
+						sent = await tClient.SendPhotoAsync(mngr.ChatId
+							, new InputOnlineFile(question.ImageUrl)
 							, qText
 							, replyMarkup: keyboard
 							, parseMode: ParseMode.Html
 							);
-					else
+					}
+					catch (Exception e)
+					{
+						log.Error($"{mngr} sending photo. qText: [{qText}], imageUrl: [{question.ImageUrl}], keyBoard: {keyboard?.SerializeIgnoreAndPopulate()} ", e);
+					}
+
+				//backup on plain text
+				if (sent == null)
+					try
+					{
 						sent = await tClient.SendTextMessageAsync(
 								mngr.ChatId
 								, qText
@@ -1538,14 +1569,18 @@ namespace Telegram.Messaging.Messaging
 								, parseMode: ParseMode.Html
 								, disableWebPagePreview: question.DisableWebPagePreview);
 
+					}
+					catch (Exception exx)
+					{
+						log.Fatal($"{mngr} - sending message. qText: [{qText}], imageUrl: [{question.ImageUrl}], keyBoard: {keyboard?.SerializeIgnoreAndPopulate()} ", exx);
+						sent = null;
+						// this is bad!!
+					}
+
+				if (sent != null)
+				{
 					mngr.recentMessageSent = 0;
 					log.Debug($"{mngr} sent.Id: '{sent.MessageId}' - survid: {surv.Id}. q: {question}");
-				}
-				catch (Exception exx)
-				{
-					log.Fatal($"{mngr} - replyMarkup: {JsonConvert.SerializeObject(keyboard)}. error sending a new one..", exx);
-					sent = null;
-					// this is bad!!
 				}
 			}
 
@@ -1615,8 +1650,8 @@ namespace Telegram.Messaging.Messaging
 			{
 				using var scope = serviceProvider.CreateScope();
 
-				var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>(); 
-				
+				var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
+
 				semSend.WaitOne();
 				var m = await tClient.SendTextMessageAsync(new ChatId(tid), message, parseMode: ParseMode.Html, replyMarkup: markup, disableWebPagePreview: disableWebPagePreview);
 				recentMessageSent++;
@@ -1638,8 +1673,8 @@ namespace Telegram.Messaging.Messaging
 			{
 				using var scope = serviceProvider.CreateScope();
 
-				var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>(); 
-				
+				var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
+
 				semSend.WaitOne();
 				var m = await tClient.SendPhotoAsync(new ChatId(ChatId), new InputOnlineFile(stream), caption);
 				recentMessageSent++;

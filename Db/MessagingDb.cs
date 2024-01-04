@@ -29,6 +29,8 @@ namespace Telegram.Messaging.Db
 			modelBuilder.Entity<DbFieldType>()
 			   .HasAlternateKey(f => f.Name);
 
+			modelBuilder.Entity<Question>().Property(x => x.ImageUrl).HasDefaultValue(null);
+
 			modelBuilder.Entity<Question>().HasOne(q => q.Survey).WithMany(x => x.Questions);
 		}
 

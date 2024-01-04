@@ -1,4 +1,5 @@
 ﻿using log4net;
+using System.Text;
 using Telegram.Bot.Types;
 
 namespace Telegram.Messaging.Types
@@ -19,11 +20,11 @@ namespace Telegram.Messaging.Types
 		public string Username { get { return From?.Username; } }
 		public long ChatId { get => Query?.Message?.Chat?.Id ?? Message?.Chat?.Id ?? 0; }
 		public bool IsDice { get => Message?.Dice != null; }
-        public bool IsPhoto => Message?.Photo != null;
-        /// <summary>
-        /// if the message represents a callback, gets the message id that originated the callback, otherwise 0
-        /// </summary>
-        public long OriginatingMessageId => Query?.Message?.MessageId ?? 0;
+		public bool IsPhoto => Message?.Photo != null;
+		/// <summary>
+		/// if the message represents a callback, gets the message id that originated the callback, otherwise 0
+		/// </summary>
+		public long OriginatingMessageId => Query?.Message?.MessageId ?? 0;
 
 		public bool CallbackQueryAnswered { get; set; }
 
@@ -106,10 +107,24 @@ namespace Telegram.Messaging.Types
 
 			Command.Name = command;
 		}
-
+		StringBuilder sb = new();
+		public string CallbackQueryAnswer => sb.ToString();
+		/// <summary>
+		/// adds a response that will be shown in the answer inline query if any
+		/// </summary>
+		/// <param name="msg"></param>
+		/// <exception cref="NotImplementedException"></exception>
+		public void AddCallbackQueryMessage(string msg)
+		{
+			if (string.IsNullOrEmpty(msg)) return;
+			sb.AppendLine(msg);
+		}
+		public void ClearCallbackQueryMessage() 
+			=> sb.Clear();
 		public override string ToString()
 		{
 			return $"{From?.Id}|{ChatId}|{IsCallbackQuery}|{OriginalInputText}|{Command}";/*|{AnsweredQuestion}*/
 		}
+
 	}
 }
