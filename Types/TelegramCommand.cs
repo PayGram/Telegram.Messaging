@@ -104,6 +104,10 @@ namespace Telegram.Messaging.Types
 		}
 		public int ParametersCount => parameters.Count;
 		/// <summary>
+		/// Get a string containing all the parameters and separating them by a space
+		/// </summary>
+		public string Query => string.Join(PARAMS_SPACE_SEP, parameters.Values);
+		/// <summary>
 		/// Returns a list of name=values separated by &
 		/// </summary>
 		public string GetNameValues()
