@@ -502,7 +502,7 @@ namespace Telegram.Messaging.Messaging
 		#endregion
 
 		#region processing
-		readonly Semaphore m = new Semaphore(1, 1);
+		readonly SemaphoreSlim m = new SemaphoreSlim(1, 1);
 
 		/// <summary>
 		/// Releases the lock and allows other calls to StartProcessing
@@ -516,11 +516,11 @@ namespace Telegram.Messaging.Messaging
 		/// <summary>
 		/// Acquires a lock and make other call block until EndProcessing is called
 		/// </summary>
-		public bool StartProcessing()
+		public async Task<bool> StartProcessing()
 		{
 			try
 			{
-				bool b = m.WaitOne(50);
+				bool b = await m.WaitAsync(50);
 				return b;
 			}
 			catch
@@ -1251,8 +1251,8 @@ namespace Telegram.Messaging.Messaging
 		#endregion
 
 		#region sending
-
-		readonly Semaphore semSend = new Semaphore(1, 1);
+		
+		readonly SemaphoreSlim semSend = new SemaphoreSlim(1, 1);
 		/// <summary>
 		/// Removes or updates (if removal could not be made because too old) a message and returns true if the operation completes.
 		/// Returns false if there was an unexpected error from telegram
@@ -1267,7 +1267,7 @@ namespace Telegram.Messaging.Messaging
 
 			try
 			{
-				semSend.WaitOne();
+				await semSend.WaitAsync();
 				if (originatingMsgId == DashboardMsgId || CurrentSurvey == null)
 					DashboardMsgId = 0; //this will force a new dashboard to be sent
 
@@ -1324,7 +1324,7 @@ namespace Telegram.Messaging.Messaging
 			using var scope = serviceProvider.CreateScope();
 
 			var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
-			semSend.WaitOne();
+			await semSend.WaitAsync();
 			try
 			{
 				// we must make sure that the question we are about to update is really the one which was shown lastly
@@ -1384,7 +1384,7 @@ namespace Telegram.Messaging.Messaging
 				return null;
 			}
 
-			semSend.WaitOne();
+			await semSend.WaitAsync();
 
 			if (CurrentMessage == null)
 			{
@@ -1652,7 +1652,7 @@ namespace Telegram.Messaging.Messaging
 
 				var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
 
-				semSend.WaitOne();
+				await semSend.WaitAsync();
 				var m = await tClient.SendTextMessageAsync(new ChatId(tid), message, parseMode: ParseMode.Html, replyMarkup: markup, disableWebPagePreview: disableWebPagePreview);
 				recentMessageSent++;
 				return m;
@@ -1675,7 +1675,7 @@ namespace Telegram.Messaging.Messaging
 
 				var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
 
-				semSend.WaitOne();
+				await semSend.WaitAsync();
 				var m = await tClient.SendPhotoAsync(new ChatId(ChatId), new InputOnlineFile(stream), caption);
 				recentMessageSent++;
 				return m;
