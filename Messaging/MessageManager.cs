@@ -1515,9 +1515,15 @@ namespace Telegram.Messaging.Messaging
 						messageNotModified = true;
 						//Debug.WriteLine("message is not modified");
 					}
+					else if (ar.Message.Contains("MESSAGE_ID_INVALID", StringComparison.OrdinalIgnoreCase))
+					{
+						//nothing, we will send a new one. but it is a strange case. maybe the user clicked very fast and we receive the same callback and this message was deleted on a previous call
+					}
 					else if (ar.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
 					{
 						//nothing, we will send a new one. but it is a strange case. maybe the user clicked very fast and we receive the same callback and this message was deleted on a previous call
+						//TODO is this even happening? -- check the logs and remove if never happened
+						log.Info($"not found message while editing. should not happen according to the docs");
 					}
 					else if (ar.Message.Contains("no text in the message", StringComparison.OrdinalIgnoreCase))
 					{
