@@ -1518,11 +1518,11 @@ namespace Telegram.Messaging.Messaging
 					else if (ar.Message.Contains("MESSAGE_ID_INVALID", StringComparison.OrdinalIgnoreCase))
 					{
 						//nothing, we will send a new one. but it is a strange case. maybe the user clicked very fast and we receive the same callback and this message was deleted on a previous call
+						log.Info($"{mngr} - msgid:{mngr.DashboardMsgId}, new text: '{qText}', replyMarkup: {keyboard.InlineKeyboard.SerializeIgnoreAndPopulate()}");
 					}
 					else if (ar.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
 					{
-						//nothing, we will send a new one. but it is a strange case. maybe the user clicked very fast and we receive the same callback and this message was deleted on a previous call
-						//TODO is this even happening? -- check the logs and remove if never happened
+						//nothing, we will send a new one. but it is a strange case. maybe the user clicked very fast and we receive the same callback and this message was deleted on a previous call or the user delete this message
 						log.Info($"not found message while editing. should not happen according to the docs");
 					}
 					else if (ar.Message.Contains("no text in the message", StringComparison.OrdinalIgnoreCase))
