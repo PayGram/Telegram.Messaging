@@ -119,7 +119,7 @@ namespace Telegram.Messaging.Types
 			if (string.IsNullOrEmpty(msg)) return;
 			sb.AppendLine(msg);
 		}
-		public void ClearCallbackQueryMessage() 
+		public void ClearCallbackQueryMessage()
 			=> sb.Clear();
 		public override string ToString()
 		{

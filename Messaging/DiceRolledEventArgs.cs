@@ -1,7 +1,4 @@
-﻿using Telegram.Messaging.Db;
-using Telegram.Messaging.Types;
-
-namespace Telegram.Messaging.Messaging
+﻿namespace Telegram.Messaging.Messaging
 {
 	//public class DiceRolledEventArgs : MessagingEventArgs
 	//{

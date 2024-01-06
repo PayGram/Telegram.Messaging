@@ -27,7 +27,7 @@ namespace Telegram.Messaging.Types
 		public DateTime AnswerDateUtc { get; set; }
 		[JsonProperty("pc")]
 		public TelegramChoice PickedChoice { get; set; }
-        [JsonConstructor]
+		[JsonConstructor]
 		public TelegramAnswer()
 		{
 		}

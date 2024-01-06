@@ -41,10 +41,10 @@ namespace Telegram.Messaging.Types
 		[JsonProperty("l")]
 		public string Label { get => Param != null && label != null ? string.Format(label, Param) : label; set => label = value; }
 
-        [JsonIgnore]
-        public string RawLabel => label;
+		[JsonIgnore]
+		public string RawLabel => label;
 
-        [JsonProperty("v")]
+		[JsonProperty("v")]
 		public string Value { get; set; }
 		[JsonProperty("p")]
 		public string Param { get; set; }

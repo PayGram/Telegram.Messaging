@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
-
-namespace Telegram.Messaging.Types
+﻿namespace Telegram.Messaging.Types
 {
 	public class TelegramCommandDef
 	{

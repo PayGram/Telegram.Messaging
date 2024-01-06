@@ -1251,7 +1251,7 @@ namespace Telegram.Messaging.Messaging
 		#endregion
 
 		#region sending
-		
+
 		readonly SemaphoreSlim semSend = new SemaphoreSlim(1, 1);
 		/// <summary>
 		/// Removes or updates (if removal could not be made because too old) a message and returns true if the operation completes.
