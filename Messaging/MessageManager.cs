@@ -1523,7 +1523,7 @@ namespace Telegram.Messaging.Messaging
 					else if (ar.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
 					{
 						//nothing, we will send a new one. but it is a strange case. maybe the user clicked very fast and we receive the same callback and this message was deleted on a previous call or the user delete this message
-						log.Info($"not found message while editing. should not happen according to the docs");
+						log.Debug($"not found message while editing. maybe user deleted the message or the bot did it before because user clicking so fast");
 					}
 					else if (ar.Message.Contains("no text in the message", StringComparison.OrdinalIgnoreCase))
 					{
