@@ -718,7 +718,7 @@ namespace Telegram.Messaging.Messaging
 				return;
 			}
 			mostRecent.AddAnswer(answer);
-			await mostRecent.UpdateQuestion();
+			await mostRecent.SaveAsync();
 			//if (CurrentMessage.IsDice)
 			//{
 			//	await RaiseOnDiceRolled(new DiceRolledEventArgs() { TelegramMessage = CurrentMessage, Value = CurrentMessage.Message.Dice.Value, OriginatingQuestion = mostRecent });
@@ -755,7 +755,7 @@ namespace Telegram.Messaging.Messaging
 				if (CurrentSurvey.MostRecentQuestion != null)
 				{
 					CurrentSurvey.MostRecentQuestion.IsCompleted = false;
-					await CurrentSurvey.MostRecentQuestion.UpdateQuestion();
+					await CurrentSurvey.MostRecentQuestion.SaveAsync();
 				}
 				await RaiseOnQuestionChanged(new QuestionChangedEventArgs() { CurrentQuestion = mostRecent, HitBack = true });
 			}
@@ -816,7 +816,7 @@ namespace Telegram.Messaging.Messaging
 						TelegramMessage = CurrentMessage
 					});
 				}
-				await mostRecent.UpdateQuestion();
+				await mostRecent.SaveAsync();
 			}
 		}
 
@@ -840,7 +840,7 @@ namespace Telegram.Messaging.Messaging
 			if (mostRecent != null && mostRecent.ExpectsCommand && mostRecent.IsCompleted == false)
 			{
 				mostRecent.AddAnswer(answer);
-				await mostRecent.UpdateQuestion();
+				await mostRecent.SaveAsync();
 			}
 
 			await RaiseOnCommand(new CommandReceivedEventArgs() { Command = CurrentMessage.Command, OriginatingQuestion = mostRecent, TelegramMessage = CurrentMessage });
@@ -1456,7 +1456,7 @@ namespace Telegram.Messaging.Messaging
 				return null;
 			}
 
-			await question.UpdateQuestion();
+			await question.SaveAsync();
 			if (surv.IsActive == false)
 			{
 				// might happen if called from UpdateShownQuestion

@@ -273,7 +273,7 @@ namespace Telegram.Messaging.Db
 		/// Updates this Question to the DB
 		/// </summary> 
 		/// <returns></returns>
-		public async Task UpdateQuestion()
+		public async Task SaveAsync()
 		{
 			using var db = new MessagingDb();
 			try
