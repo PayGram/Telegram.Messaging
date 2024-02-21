@@ -37,17 +37,17 @@ namespace Telegram.Messaging.Types
 		[JsonIgnore]
 		public bool IsSystemChoice { get => SystemChoices.Where(x => x.Equals(this)).Count() > 0; }
 
-		string label;
+		string? label;
 		[JsonProperty("l")]
-		public string Label { get => Param != null && label != null ? string.Format(label, Param) : label; set => label = value; }
+		public string? Label { get => Param != null && label != null ? string.Format(label, Param) : label; set => label = value; }
 
 		[JsonIgnore]
-		public string RawLabel => label;
+		public string? RawLabel => label;
 
 		[JsonProperty("v")]
 		public string Value { get; set; }
 		[JsonProperty("p")]
-		public string Param { get; set; }
+		public string? Param { get; set; }
 		//[JsonIgnoreAttribute]
 		//[JsonProperty("m")]
 		//public long MessageId { get; set; }
