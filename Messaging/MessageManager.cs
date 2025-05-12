@@ -1646,11 +1646,11 @@ namespace Telegram.Messaging.Messaging
 		/// </summary>
 		/// <param name="message">The message to send, html is accepted</param>
 		/// <returns></returns>
-		public async Task<Message?> SendMessage(string message, IReplyMarkup? markup = null, bool? disableWebPagePreview = false)
+		public async Task<Message?> SendMessage(string message, IReplyMarkup? markup = null, bool? disableWebPagePreview = false, ParseMode parseMode = ParseMode.Html)
 		{
 			return await SendMessage(message, ChatId, markup, disableWebPagePreview);
 		}
-		private async Task<Message?> SendMessage(string message, long tid, IReplyMarkup? markup = null, bool? disableWebPagePreview = false)
+		private async Task<Message?> SendMessage(string message, long tid, IReplyMarkup? markup = null, bool? disableWebPagePreview = false, ParseMode parseMode = ParseMode.Html)
 		{
 			try
 			{
@@ -1659,7 +1659,7 @@ namespace Telegram.Messaging.Messaging
 				var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
 
 				await semSend.WaitAsync();
-				var m = await tClient.SendTextMessageAsync(new ChatId(tid), message, parseMode: ParseMode.Html, replyMarkup: markup, disableWebPagePreview: disableWebPagePreview);
+				var m = await tClient.SendTextMessageAsync(new ChatId(tid), message, parseMode: parseMode, replyMarkup: markup, disableWebPagePreview: disableWebPagePreview);
 				recentMessageSent++;
 				return m;
 			}
