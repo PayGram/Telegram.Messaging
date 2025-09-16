@@ -600,7 +600,7 @@ namespace Telegram.Messaging.Messaging
 			try
 			{
 				// Check if the message is contact share?
-				if (CurrentMessage.Message != null && CurrentMessage.Message.Type == MessageType.Contact)
+				if (CurrentMessage?.Message?.Type == MessageType.Contact)
 				{
 					// If it is break from the command process
 					return CurrentMessage;
