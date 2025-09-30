@@ -58,6 +58,9 @@ namespace Telegram.Messaging.Types
 		[JsonIgnore]
 		public bool IsUrl { get => Uri.TryCreate(Value, UriKind.Absolute, out _); }
 
+		[JsonProperty("wa")]
+		public bool IsWebApp { get; set; }
+
 		/// <summary>
 		/// Creates a new default answer where the label and the value are the same
 		/// </summary>
@@ -83,6 +86,23 @@ namespace Telegram.Messaging.Types
 				throw new ArgumentNullException("Value of 'value' cannot be null @ DefaultAnswer");
 		}
 
+		/// <summary>
+		/// Creates a new Default answer for WebApp
+		/// </summary>
+		/// <param name="label">The displayed label of this answer</param>
+		/// <param name="value">The URL associated with this WebApp</param>
+		/// <param name="isWebapp">Check if the button is web app or not</param>
+		/// <param name="param">The parameter assigned to this choice. If parameter is set, and Label is formattable, label will be formatted with the parameter</param>
+		public TelegramChoice(string? label, string? value, bool? isWebapp, string? param = null)
+		{
+			Value = value;
+			Label = label;
+			Param = param;
+			IsWebApp = isWebapp ?? false;;
+			if (value == null)
+				throw new ArgumentNullException("Value of 'value' cannot be null @ DefaultAnswer");
+		}
+		
 		/// <summary>
 		/// This is the Json used constructor
 		/// </summary>

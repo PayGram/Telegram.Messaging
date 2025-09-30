@@ -568,7 +568,7 @@ namespace Telegram.Messaging.Messaging
 			List<TelegramChoice> choices = new List<TelegramChoice>();
 			foreach (var comm in ValidCommands)
 				if (comm.ShowOnDashboard)
-					choices.Add(new TelegramChoice(comm.Label, comm.Name));
+					choices.Add(new TelegramChoice(comm.Label, comm.Name, comm.IsWebApp));
 			return choices;
 		}
 
@@ -1171,8 +1171,20 @@ namespace Telegram.Messaging.Messaging
 				{
 					log.Error($"{a} has null label");
 				}
+			else
+			{
+				var button = new InlineKeyboardButton(a.Label);
+				if (a.IsWebApp)
+				{
+					button.WebApp = new Telegram.Bot.Types.WebAppInfo() { Url = a.Value };
+				}
 				else
-					currentRow.Add(new InlineKeyboardButton(a.Label) { CallbackData = a.ToJsonSpecial(), Url = a.IsUrl ? a.Value : null });
+				{
+					button.CallbackData = a.ToJsonSpecial();
+					button.Url = a.IsUrl ? a.Value : null;
+				}
+				currentRow.Add(button);
+			}
 
 				if (numOfEl++ == itemsPerRow)
 				{
