@@ -1185,6 +1185,7 @@ namespace Telegram.Messaging.Messaging
 						button.CallbackData = a.ToJsonSpecial();
 						button.Url = a.IsUrl ? a.Value : null;
 					}
+					currentRow.Add(button);
 				}
 
 				if (numOfEl++ == itemsPerRow)
