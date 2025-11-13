@@ -567,8 +567,8 @@ namespace Telegram.Messaging.Messaging
 		{
 			List<TelegramChoice> choices = new List<TelegramChoice>();
 			foreach (var comm in ValidCommands)
-				if (comm.ShowOnDashboard)
-					choices.Add(new TelegramChoice(comm.Label, comm.Name));
+				if (comm.ShowOnDashboard) // Updated by Iddhi, for the Paygram MiniApp View
+					choices.Add(new TelegramChoice(comm.Label, comm.Name, comm.IsWebApp));
 			return choices;
 		}
 
@@ -599,6 +599,14 @@ namespace Telegram.Messaging.Messaging
 
 			try
 			{
+				// Added by Iddhi, for the contact number verification
+				// Check if the message is contact share?
+				if(CurrentMessage?.Message?.Type == MessageType.Contact)
+				{
+					// If it is break from the command process
+					return CurrentMessage;
+				}
+
 				// let's see if there is an open survey
 				CurrentSurvey = await Survey.GetCurrentSurvey(ChatId);
 				if (CurrentSurvey == null)//user is new or db was cleaned, let's create a new survey for him
@@ -1164,8 +1172,21 @@ namespace Telegram.Messaging.Messaging
 				{
 					log.Error($"{a} has null label");
 				}
+				// Updated by Iddhi, for the Paygram MiniApp View
 				else
-					currentRow.Add(new InlineKeyboardButton(a.Label) { CallbackData = a.ToJsonSpecial(), Url = a.IsUrl ? a.Value : null });
+				{
+					var button = new InlineKeyboardButton(a.Label);
+					if (a.IsWebApp) 
+					{
+						button.WebApp = new WebAppInfo() { Url = a.Value };
+					}
+					else
+					{
+						button.CallbackData = a.ToJsonSpecial();
+						button.Url = a.IsUrl ? a.Value : null;
+					}
+					currentRow.Add(button);
+				}
 
 				if (numOfEl++ == itemsPerRow)
 				{
