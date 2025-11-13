@@ -599,6 +599,14 @@ namespace Telegram.Messaging.Messaging
 
 			try
 			{
+				// Added by Iddhi, for the contact number verification
+				// Check if the message is contact share?
+				if(CurrentMessage?.Message?.Type == MessageType.Contact)
+				{
+					// If it is break from the command process
+					return CurrentMessage;
+				}
+
 				// let's see if there is an open survey
 				CurrentSurvey = await Survey.GetCurrentSurvey(ChatId);
 				if (CurrentSurvey == null)//user is new or db was cleaned, let's create a new survey for him
