@@ -405,7 +405,7 @@ namespace Telegram.Messaging.Db
 			{
 				using (var db = new MessagingDb())
 				{
-					return await (from qs in db.Questions.Include(x => x.Survey)
+					return await (from qs in db.Questions.AsNoTracking().Include(x => x.Survey)
 								  where qs.Survey.TelegramUserId == tid
 								  select qs).OrderByDescending(x => x.Id).FirstOrDefaultAsync().ConfigureAwait(false);
 				}
@@ -428,7 +428,7 @@ namespace Telegram.Messaging.Db
 			{
 				using (var db = new MessagingDb())
 				{
-					return (from qs in db.Questions.Include(x => x.Survey)
+					return (from qs in db.Questions.AsNoTracking().Include(x => x.Survey)
 							where qs.Survey.TelegramUserId == tid
 							select qs).OrderByDescending(x => x.Id).FirstOrDefault();
 				}

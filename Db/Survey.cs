@@ -43,7 +43,7 @@ namespace Telegram.Messaging.Db
 		{
 			using (var db = new MessagingDb())
 			{
-				var ss = await (from survs in db.Surveys.Include(x => x.Questions)//.ThenInclude(y => y.FieldType)
+				var ss = await (from survs in db.Surveys.AsNoTracking().Include(x => x.Questions)//.ThenInclude(y => y.FieldType)
 								where survs.IsActive && survs.IsCompleted == false && survs.IsCancelled == false
 								//&& survs.LastInteractionUtc.AddSeconds(SURVEY_EXPIRES_AFTER_SECONDS) > DateTime.UtcNow
 								&& telegramUserId == survs.TelegramUserId
@@ -63,7 +63,7 @@ namespace Telegram.Messaging.Db
 		{
 			using (var db = new MessagingDb())
 			{
-				var ss = await (from survs in db.Surveys.Include(x => x.Questions)//.ThenInclude(y => y.FieldType)
+				var ss = await (from survs in db.Surveys.AsNoTracking().Include(x => x.Questions)//.ThenInclude(y => y.FieldType)
 								where survs.IsCompleted == true && survs.TelegramUserId == telegramUserId
 								select survs).OrderByDescending(x => x.TelegramMessageId).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
 
@@ -82,8 +82,8 @@ namespace Telegram.Messaging.Db
 		{
 			using (var db = new MessagingDb())
 			{
-				var ss = await (from survs in db.Surveys.Include(x => x.Questions)//.ThenInclude(y => y.FieldType)
-								join quests in db.Questions on survs.Id equals quests.SurveyId
+				var ss = await (from survs in db.Surveys.AsNoTracking().Include(x => x.Questions)//.ThenInclude(y => y.FieldType)
+								join quests in db.Questions.AsNoTracking() on survs.Id equals quests.SurveyId
 								where quests.Id == questionId
 								select survs).OrderByDescending(x => x.TelegramMessageId).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
 
@@ -103,7 +103,7 @@ namespace Telegram.Messaging.Db
 		{
 			using (var db = new MessagingDb())
 			{
-				var ss = await (from survs in db.Surveys.Include(x => x.Questions)//.ThenInclude(y => y.FieldType)
+				var ss = await (from survs in db.Surveys.AsNoTracking().Include(x => x.Questions)//.ThenInclude(y => y.FieldType)
 								where tid == survs.TelegramUserId
 								select survs).OrderByDescending(x => x.TelegramMessageId).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
 				if (ss != null)

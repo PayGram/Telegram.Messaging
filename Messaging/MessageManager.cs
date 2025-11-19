@@ -1648,7 +1648,7 @@ namespace Telegram.Messaging.Messaging
 		/// <returns></returns>
 		public async Task<Message?> SendMessage(string message, IReplyMarkup? markup = null, bool? disableWebPagePreview = false, ParseMode parseMode = ParseMode.Html)
 		{
-			return await SendMessage(message, ChatId, markup, disableWebPagePreview);
+			return await SendMessage(message, ChatId, markup, disableWebPagePreview, parseMode);
 		}
 		private async Task<Message?> SendMessage(string message, long tid, IReplyMarkup? markup = null, bool? disableWebPagePreview = false, ParseMode parseMode = ParseMode.Html)
 		{
@@ -1659,6 +1659,7 @@ namespace Telegram.Messaging.Messaging
 				var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
 
 				await semSend.WaitAsync();
+
 				var m = await tClient.SendTextMessageAsync(new ChatId(tid), message, parseMode: parseMode, replyMarkup: markup, disableWebPagePreview: disableWebPagePreview);
 				recentMessageSent++;
 				return m;
@@ -1673,6 +1674,7 @@ namespace Telegram.Messaging.Messaging
 			}
 			return null;
 		}
+
 		public async Task<Message?> SendPhoto(string caption, Stream stream)
 		{
 			try
