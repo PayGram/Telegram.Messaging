@@ -1,10 +1,10 @@
 ﻿GO
-/****** Object:  StoredProcedure [dbo].[Questions_DeleteOld]    Script Date: 11/20/2025 2:05:59 AM ******/
+/****** Object:  StoredProcedure [dbo].[Questions_DeleteOld]    Script Date: 11/20/2025 2:07:56 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-alter   PROCEDURE [dbo].[Surveys_DeleteOld]
+ALTER   PROCEDURE [dbo].[Questions_DeleteOld]
 (
     @CutoffDate  datetime,       -- delete rows older than this
     @BatchSize   int = 1000,     -- how many rows per batch
@@ -26,7 +26,7 @@ BEGIN
         ;WITH to_delete AS
         (
             SELECT TOP (@BatchSize) Id
-            FROM dbo.surveys WITH (ROWLOCK, READPAST)   -- hints to reduce blocking
+            FROM dbo.questions WITH (ROWLOCK, READPAST)   -- hints to reduce blocking
             WHERE CreatedUtc < @CutoffDate
             ORDER BY Id                                  -- use indexed column
         )
