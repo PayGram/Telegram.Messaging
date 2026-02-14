@@ -11,5 +11,11 @@
 			Name = name;
 			ShowOnDashboard = showOnDashboard;
 		}
+		// Added by Iddhi, for the Paygram MiniApp View
+		public bool IsWebApp { get; set; } = false;
+		public TelegramCommandDef(string name, string label, bool showOnDashboard, bool isWebApp) : this(name, label, showOnDashboard)
+		{
+			IsWebApp = isWebApp;
+		}
 	}
 }
