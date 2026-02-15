@@ -1,6 +1,7 @@
 ﻿using log4net;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using System.Collections.Concurrent;
 using System.Web;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
@@ -188,8 +189,8 @@ namespace Telegram.Messaging.Messaging
 		#endregion
 
 		#region Events firing
-		readonly Dictionary<string, IQuestionAnswerCallbackHandler> callBackhandlers = new Dictionary<string, IQuestionAnswerCallbackHandler>();
-		readonly object syncHndlrs = new object();
+		readonly ConcurrentDictionary<string, IQuestionAnswerCallbackHandler> callBackhandlers = new ConcurrentDictionary<string, IQuestionAnswerCallbackHandler>();
+		//readonly object syncHndlrs = new object();
 		public T GetHandler<T>() where T : QuestionAnswerCallbackHandler
 		{
 			return (T)GetHandler(typeof(T));
@@ -203,14 +204,19 @@ namespace Telegram.Messaging.Messaging
 		public QuestionAnswerCallbackHandler GetHandler(Type key)
 		{
 			string skey = key.ToString();
-			lock (syncHndlrs)
-			{
-				if (callBackhandlers.ContainsKey(skey)) return callBackhandlers[skey] as QuestionAnswerCallbackHandler;
-				var callbackHandler = Activator.CreateInstance(key, this) as QuestionAnswerCallbackHandler;
-				//callbackHandler.Manager = this;
-				callBackhandlers.Add(skey, callbackHandler);
-				return callbackHandler;
-			}
+			//lock (syncHndlrs)
+			//{
+
+			return (QuestionAnswerCallbackHandler)callBackhandlers.GetOrAdd(skey, (s) => Activator.CreateInstance(key, this) as QuestionAnswerCallbackHandler);
+
+			//if (callBackhandlers.ContainsKey(skey)) return callBackhandlers[skey] as QuestionAnswerCallbackHandler;
+
+
+			//var callbackHandler = Activator.CreateInstance(key, this) as QuestionAnswerCallbackHandler;
+			////callbackHandler.Manager = this;
+			//callBackhandlers.Add(skey, callbackHandler);
+			//return callbackHandler;
+			//}
 		}
 		/// <summary>
 		/// Gets a delegate whose target is the same handler that was eventually created by preceeding calls.
@@ -229,30 +235,50 @@ namespace Telegram.Messaging.Messaging
 
 			IQuestionAnswerCallbackHandler target;
 			AsyncEventHandler<MessagingEventArgs> toret;
-			lock (syncHndlrs)
+
+			target = callBackhandlers.GetOrAdd(skey, (s) =>
 			{
-				if (callBackhandlers.ContainsKey(skey))
-				{
-					// we already have a target-handler for this action, we must create  a new delegate
-					// that takes as target the object that we already have
-					target = callBackhandlers[skey];
-					toret = (AsyncEventHandler<MessagingEventArgs>)Delegate.CreateDelegate(typeof(AsyncEventHandler<MessagingEventArgs>), target, forAction.Method);
-				}
-				else
-				{
-					// we don't have a target-handler for this action, we can add the target to our list of handlers
-					// so next time we will use it, but first we must check that this target is not a dummy (see Question.MethodNameOnEvent)
-					target = (IQuestionAnswerCallbackHandler)forAction.Target;
-					if (target.Manager == null)//dummy, drop it
-					{
-						target = Activator.CreateInstance(forAction.Method.DeclaringType, this) as QuestionAnswerCallbackHandler;
-						toret = (AsyncEventHandler<MessagingEventArgs>)Delegate.CreateDelegate(typeof(AsyncEventHandler<MessagingEventArgs>), target, forAction.Method); // we recreate a new one because the constructor might do some initializations that assigning the manager through the property wouldnt happens
-					}
-					else
-						toret = forAction;
-					callBackhandlers.Add(skey, target);
-				}
-			}
+				var _target = forAction.Target as IQuestionAnswerCallbackHandler;
+				if (_target?.Manager == null)//dummy, drop it
+					_target = Activator.CreateInstance(forAction.Method.DeclaringType, this) as QuestionAnswerCallbackHandler;
+
+				if (_target == null)
+					log.Error($"{forAction?.ToString()} | {forAction?.Target?.ToString()}");
+
+				return _target;
+			});
+
+			if (forAction?.Target is IQuestionAnswerCallbackHandler qcb && qcb.Manager != null)
+				toret = forAction;
+			else
+				// create a new delegate with the target that we have,
+				// if we already have a target for this type of handler,
+				// it means that the target is shared between different events and we want to reuse it, so we create a new delegate with the same method but with the target that we already have
+				toret = (AsyncEventHandler<MessagingEventArgs>)Delegate.CreateDelegate(typeof(AsyncEventHandler<MessagingEventArgs>), target, forAction.Method);
+
+
+			//if (callBackhandlers.ContainsKey(skey))
+			//{
+			//	// we already have a target-handler for this action, we must create a new delegate
+			//	// that takes as target the object that we already have
+			//	target = callBackhandlers[skey];
+			//	toret = (AsyncEventHandler<MessagingEventArgs>)Delegate.CreateDelegate(typeof(AsyncEventHandler<MessagingEventArgs>), target, forAction.Method);
+			//}
+			//else
+			//{
+			//	// we don't have a target-handler for this action, we can add the target to our list of handlers
+			//	// so next time we will use it, but first we must check that this target is not a dummy (see Question.MethodNameOnEvent)
+			//	target = (IQuestionAnswerCallbackHandler)forAction.Target;
+			//	if (target.Manager == null)//dummy, drop it
+			//	{
+			//		target = Activator.CreateInstance(forAction.Method.DeclaringType, this) as QuestionAnswerCallbackHandler;
+			//		toret = (AsyncEventHandler<MessagingEventArgs>)Delegate.CreateDelegate(typeof(AsyncEventHandler<MessagingEventArgs>), target, forAction.Method); // we recreate a new one because the constructor might do some initializations that assigning the manager through the property wouldnt happens
+			//	}
+			//	else
+			//		toret = forAction;
+			//	callBackhandlers.Add(skey, target);
+			//}
+
 			return toret;
 		}
 		async Task RaiseOnCommand(CommandReceivedEventArgs e)
@@ -601,7 +627,7 @@ namespace Telegram.Messaging.Messaging
 			{
 				// Added by Iddhi, for the contact number verification
 				// Check if the message is contact share?
-				if(CurrentMessage?.Message?.Type == MessageType.Contact)
+				if (CurrentMessage?.Message?.Type == MessageType.Contact)
 				{
 					// If it is break from the command process
 					return CurrentMessage;
@@ -1176,7 +1202,7 @@ namespace Telegram.Messaging.Messaging
 				else
 				{
 					var button = new InlineKeyboardButton(a.Label);
-					if (a.IsWebApp) 
+					if (a.IsWebApp)
 					{
 						button.WebApp = new WebAppInfo() { Url = a.Value };
 					}
