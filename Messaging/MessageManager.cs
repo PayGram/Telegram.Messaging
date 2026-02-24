@@ -1197,7 +1197,16 @@ namespace Telegram.Messaging.Messaging
 			await RaiseOnSurveyCancelled(new SurveyCancelledEventArgs() { Survey = tmpSrv, GivenAnswers = answers, CurrentQuestion = tmpSrv.MostRecentQuestion });
 			return answers;
 		}
-		
+
+		/// <summary>
+		/// Removes the current menu message (same as ProcessCurrentMessage lines 702-708) so the next SendQuestion sends a new message.
+		/// </summary>
+		public async Task RemoveCurrentMenuMessageAsync()
+		{
+			if (DashboardMsgId != 0)
+				await RemoveMessageAsync(DashboardMsgId);
+		}
+
 		public static ReplyKeyboardMarkup CreateContactShareButton(string buttonText)
 		{
 			// Build the contact share button
