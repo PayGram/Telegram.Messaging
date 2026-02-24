@@ -1,4 +1,4 @@
-﻿using log4net;
+using log4net;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
@@ -78,6 +78,7 @@ namespace Telegram.Messaging.Messaging
 		public event EventHandler<SurveyCompletedEventArgs> OnSurveyCompleted;
 		public event EventHandler<PayReceivedEventArgs> OnPayPressed;
 		public event EventHandler<InvalidInteractionEventArgs> OnInvalidInteraction;
+		public event EventHandler<ContactSharedEventArgs> OnContactShared;
 		//public event EventHandler<DiceRolledEventArgs> OnDiceRolled;
 
 		public event AsyncEventHandler<CommandReceivedEventArgs> OnCommandAsync;
@@ -88,9 +89,12 @@ namespace Telegram.Messaging.Messaging
 		public event AsyncEventHandler<SurveyCompletedEventArgs> OnSurveyCompletedAsync;
 		public event AsyncEventHandler<PayReceivedEventArgs> OnPayPressedAsync;
 		public event AsyncEventHandler<InvalidInteractionEventArgs> OnInvalidInteractionAsync;
+		public event AsyncEventHandler<ContactSharedEventArgs> OnContactSharedAsync;
 		//public event AsyncEventHandler<DiceRolledEventArgs> OnDiceRolledAsync;
 
 		IServiceProvider serviceProvider;
+
+		public Func<MessageManager, Task>? CheckContactRequired { get; set; }
 
 		/// <summary>
 		/// Creates a new MessageManager for the bot
@@ -141,6 +145,7 @@ namespace Telegram.Messaging.Messaging
 			OnSurveyCompleted += MessageManager_OnSurveyCompleted;
 			OnPayPressed += MessageManager_OnPayPressed;
 			OnInvalidInteraction += MessageManager_OnInvalidInteraction;
+			OnContactShared += MessageManager_OnContactShared;
 		}
 
 		#region events logging
@@ -185,6 +190,10 @@ namespace Telegram.Messaging.Messaging
 		private void MessageManager_OnCommand(object? sender, CommandReceivedEventArgs e)
 		{
 			log.Debug($"{TId}:{UsernameOrFirstName}. OnCommand. TelegramMessage: {e.TelegramMessage}, Command: {e.Command}");
+		}
+		private void MessageManager_OnContactShared(object? sender, ContactSharedEventArgs e)
+		{
+			log.Debug($"{TId}:{UsernameOrFirstName}. OnContactShared. PhoneNumber: {e.PhoneNumber}, ContactUserId: {e.ContactUserId}, ChatId: {e.ChatId}");
 		}
 		#endregion
 
@@ -509,6 +518,16 @@ namespace Telegram.Messaging.Messaging
 			}
 			await Task.WhenAll(tasks);
 		}
+		async Task RaiseOnContactShared(ContactSharedEventArgs e)
+		{
+			e.Manager = this;
+			List<Task> tasks = new List<Task>();
+			if (OnContactShared != null)
+				Array.ForEach(OnContactShared.GetInvocationList(), (d) => configureAndAddTask(tasks, d, e));
+			if (OnContactSharedAsync != null)
+				Array.ForEach(OnContactSharedAsync.GetInvocationList(), (d) => configureAndAddTask(tasks, d, e));
+			await Task.WhenAll(tasks);
+		}
 		/// <summary>
 		/// Adds the task corresponding to the passed delegate to the list of tasks and invokes it
 		/// </summary>
@@ -625,12 +644,31 @@ namespace Telegram.Messaging.Messaging
 
 			try
 			{
-				// Added by Iddhi, for the contact number verification
-				// Check if the message is contact share?
-				if (CurrentMessage?.Message?.Type == MessageType.Contact)
+				// contact sharing: raise event for handlers to process
+				if (CurrentMessage?.Message?.Type == MessageType.Contact || CurrentMessage?.Message?.Contact != null)
 				{
-					// If it is break from the command process
+					var contact = CurrentMessage.Message?.Contact;
+					if (contact != null)
+					{
+						var e = new ContactSharedEventArgs
+						{
+							PhoneNumber = contact.PhoneNumber ?? string.Empty,
+							FirstName = contact.FirstName,
+							UserId = TId,
+							ContactUserId = contact.UserId,
+							ChatId = CurrentMessage.Message?.Chat?.Id ?? ChatId,
+							Contact = contact
+						};
+						await RaiseOnContactShared(e);
+					}
+
 					return CurrentMessage;
+				}
+
+				// fire-and-forget check to see if we should send contact-share keyboard
+				if (CheckContactRequired != null)
+				{
+					_ = CheckContactRequired(this);
 				}
 
 				// let's see if there is an open survey
@@ -1158,6 +1196,41 @@ namespace Telegram.Messaging.Messaging
 
 			await RaiseOnSurveyCancelled(new SurveyCancelledEventArgs() { Survey = tmpSrv, GivenAnswers = answers, CurrentQuestion = tmpSrv.MostRecentQuestion });
 			return answers;
+		}
+
+		/// <summary>
+		/// Removes the current menu message (same as ProcessCurrentMessage lines 702-708) so the next SendQuestion sends a new message.
+		/// </summary>
+		public async Task RemoveCurrentMenuMessageAsync()
+		{
+			if (DashboardMsgId != 0)
+				await RemoveMessageAsync(DashboardMsgId);
+		}
+
+		public static ReplyKeyboardMarkup CreateContactShareButton(string buttonText)
+		{
+			// Build the contact share button
+			var contactButton = new KeyboardButton(buttonText)
+			{
+				RequestContact = true
+			};
+
+			// Reply keyboard
+			var replyKeyboard = new ReplyKeyboardMarkup(new[]
+			{
+				new[] { contactButton }
+			})
+			{
+				ResizeKeyboard = true
+			};
+
+			return replyKeyboard;
+		}
+
+		public async Task<Message?> SendContactShareKeyboard(string messageText, string buttonText)
+		{
+			var keyboard = CreateContactShareButton(buttonText);
+			return await SendMessage(messageText, keyboard);
 		}
 
 		/// <summary>
