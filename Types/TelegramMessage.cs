@@ -65,7 +65,7 @@ namespace Telegram.Messaging.Types
 
 			if (parms.Length > 2)
 			{
-				// this should not happen
+				// this will happen only if the user is sending something like /start param1 param2 param3
 				log.Debug($"Found command with multiple parameters separated by space {string.Join(",", parms)}");
 				//return;
 			}
