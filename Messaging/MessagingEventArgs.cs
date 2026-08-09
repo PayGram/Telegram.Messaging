@@ -1,4 +1,4 @@
-﻿namespace Telegram.Messaging.Messaging
+namespace Telegram.Messaging.Messaging
 {
 	public enum MessageEventTypes
 	{
@@ -10,7 +10,8 @@
 		InvalidInteraction,
 		PayReceived,
 		QuestionChanged,
-		SurveyCompleted
+		SurveyCompleted,
+		ContactShared
 	}
 	public class MessagingEventArgs : EventArgs
 	{
