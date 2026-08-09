@@ -1,4 +1,4 @@
-﻿using log4net;
+using log4net;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
@@ -1565,7 +1565,7 @@ namespace Telegram.Messaging.Messaging
 					else if (ar.Message.Contains("MESSAGE_ID_INVALID", StringComparison.OrdinalIgnoreCase))
 					{
 						//nothing, we will send a new one. but it is a strange case. maybe the user clicked very fast and we receive the same callback and this message was deleted on a previous call
-						log.Info($"{mngr} - msgid:{mngr.DashboardMsgId}, new text: '{qText}', replyMarkup: {keyboard.InlineKeyboard.SerializeIgnoreAndPopulate()}");
+						log.Debug($"{mngr} - msgid:{mngr.DashboardMsgId}, new text: '{qText}', replyMarkup: {keyboard.InlineKeyboard.SerializeIgnoreAndPopulate()}");
 					}
 					else if (ar.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
 					{
@@ -1625,7 +1625,7 @@ namespace Telegram.Messaging.Messaging
 					}
 					catch (Exception exx)
 					{
-						log.Fatal($"{mngr} - sending message. qText: [{qText}], imageUrl: [{question.ImageUrl}], keyBoard: {keyboard?.SerializeIgnoreAndPopulate()} ", exx);
+						log.Error($"{mngr} - sending message. qText: [{qText}], imageUrl: [{question.ImageUrl}], keyBoard: {keyboard?.SerializeIgnoreAndPopulate()} ", exx);
 						sent = null;
 						// this is bad!!
 					}
@@ -1713,7 +1713,7 @@ namespace Telegram.Messaging.Messaging
 			}
 			catch (Exception ex)
 			{
-				log.Debug($"{TId}:{UsernameOrFirstName}. Error sending message on ChatId {tid}", ex);
+				log.Warn($"{TId}:{UsernameOrFirstName}. Error sending message on ChatId {tid}", ex);
 			}
 			finally
 			{
@@ -1737,7 +1737,7 @@ namespace Telegram.Messaging.Messaging
 			}
 			catch (Exception ex)
 			{
-				log.Debug($"{TId}:{UsernameOrFirstName}. Error sending message on ChatId {ChatId}", ex);
+				log.Warn($"{TId}:{UsernameOrFirstName}. Error sending message on ChatId {ChatId}", ex);
 			}
 			finally
 			{
