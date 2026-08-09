@@ -1747,6 +1747,36 @@ namespace Telegram.Messaging.Messaging
 		}
 
 		/// <summary>
+		/// Sends a document (file attachment) to the chat with the user
+		/// </summary>
+		/// <param name="caption">The caption shown under the document, html is accepted</param>
+		/// <param name="stream">The content of the document</param>
+		/// <param name="fileName">The file name shown to the user</param>
+		public async Task<Message?> SendDocument(string caption, Stream stream, string fileName)
+		{
+			try
+			{
+				using var scope = serviceProvider.CreateScope();
+
+				var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
+
+				await semSend.WaitAsync();
+				var m = await tClient.SendDocumentAsync(new ChatId(ChatId), new InputOnlineFile(stream, fileName), caption, parseMode: ParseMode.Html);
+				recentMessageSent++;
+				return m;
+			}
+			catch (Exception ex)
+			{
+				log.Warn($"{TId}:{UsernameOrFirstName}. Error sending document on ChatId {ChatId}", ex);
+			}
+			finally
+			{
+				semSend.Release();
+			}
+			return null;
+		}
+
+		/// <summary>
 		/// If the CurrentSurvey.TelegramMessageId is not null, the corresponding UI message is deleted
 		/// and it is set to null.
 		/// This is used to force the recreation of a menu
