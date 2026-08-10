@@ -68,6 +68,19 @@ namespace Telegram.Messaging.Db
 		}
 
 		/// <summary>
+		/// Resolves a persisted type name against the assemblies already loaded in the appdomain only:
+		/// these values come from the db, and a hostile value must not be able to trigger the load
+		/// of an arbitrary assembly from disk
+		/// </summary>
+		static Type? ResolvePersistedType(string assemblyQualifiedName)
+		{
+			if (string.IsNullOrWhiteSpace(assemblyQualifiedName)) return null;
+			return Type.GetType(assemblyQualifiedName,
+				asmName => AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == asmName.Name),
+				null, false);
+		}
+
+		/// <summary>
 		/// A string representation of CallbackHandler
 		/// </summary>
 		public string? CallbackHandlerAssemblyName
@@ -85,7 +98,7 @@ namespace Telegram.Messaging.Db
 					_callbackHandler = null;
 					return;
 				}
-				Type t = Type.GetType(value, false, false);
+				Type? t = ResolvePersistedType(value);
 				if (t == null || t.IsSubclassOf(typeof(QuestionAnswerCallbackHandler)) == false)
 					throw new Exception($"Type {t} was not found or it is not a subclass of {typeof(QuestionAnswerCallbackHandler).Name}");
 				_callbackHandler = t;
@@ -136,7 +149,7 @@ namespace Telegram.Messaging.Db
 				string[] typeAndMethod = value.Split(new char[] { '`' });
 				if (typeAndMethod.Length != 3) return;
 
-				Type t = Type.GetType(typeAndMethod[0], false, false);
+				Type? t = ResolvePersistedType(typeAndMethod[0]);
 				if (t == null) return;
 
 				bool isStatic = bool.Parse(typeAndMethod[1]);
@@ -152,6 +165,13 @@ namespace Telegram.Messaging.Db
 					}
 					else
 					{
+						// never instantiate a persisted type that is not one of our handlers: the value comes
+						// from the db and Activator.CreateInstance would run an arbitrary constructor
+						if (typeof(IQuestionAnswerCallbackHandler).IsAssignableFrom(t) == false)
+						{
+							log.Debug($"QID: {Id} - {value} - persisted OnEvent target type {t} does not implement {nameof(IQuestionAnswerCallbackHandler)}, skipping");
+							return;
+						}
 
 						/// <summary>
 						/// this dummy callback handler is used as a dummy target for the OnEventAsync when a static method is not used
