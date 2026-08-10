@@ -278,10 +278,9 @@ namespace Telegram.Messaging.Db
 			using var db = new MessagingDb();
 			try
 			{
-				db.Attach(this);
-				var entry = db.Entry(this);
-				if (entry.State != EntityState.Added)
-					entry.State = EntityState.Modified;
+				// do not use Attach here: it traverses Survey -> Survey.Questions and would also insert
+				// sibling questions still having Id == 0, racing with UpdateSurvey(true) on their identity
+				db.Entry(this).State = Id == 0 ? EntityState.Added : EntityState.Modified;
 				int k = await db.SaveChangesAsync().ConfigureAwait(false);
 			}
 			catch (Exception ex)

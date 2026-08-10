@@ -556,6 +556,30 @@ namespace Telegram.Messaging.Messaging
 		}
 
 		/// <summary>
+		/// Runs the action while holding the same per-user lock used by <see cref="StartProcessing"/>/<see cref="EndProcessing"/>,
+		/// so it never overlaps with the processing of a telegram update. Meant for background work (e.g. the balance-changed
+		/// callback coming from the PayGram server) that mutates the survey graph shared with the update-processing flow.
+		/// The semaphore is not reentrant: do not call this from a flow that already holds the lock, it would wait the whole timeout.
+		/// </summary>
+		/// <param name="action">The work to run under the lock</param>
+		/// <param name="timeoutMillis">How long to wait for the lock before giving up</param>
+		/// <returns>False if the lock was not acquired within the timeout and the action was not run</returns>
+		public async Task<bool> RunExclusiveAsync(Func<Task> action, int timeoutMillis = 15000)
+		{
+			if (await m.WaitAsync(timeoutMillis).ConfigureAwait(false) == false)
+				return false;
+			try
+			{
+				await action().ConfigureAwait(false);
+				return true;
+			}
+			finally
+			{
+				m.Release();
+			}
+		}
+
+		/// <summary>
 		/// Process the incoming update from telegram
 		/// </summary>
 		/// <param name="upd">The update to process</param>

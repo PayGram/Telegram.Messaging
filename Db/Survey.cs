@@ -152,10 +152,9 @@ namespace Telegram.Messaging.Db
 				if (updateQuestions)
 					Questions.ForEach(q =>
 					{
-						db.Attach(q);
-						var entry = db.Entry(q);
-						if (entry.State != EntityState.Added)
-							entry.State = EntityState.Modified;
+						// set the FK explicitly: without Attach there is no graph fixup resolving it from the navigation
+						q.SurveyId = Id;
+						db.Entry(q).State = q.Id == 0 ? EntityState.Added : EntityState.Modified;
 					});
 				await db.SaveChangesAsync();
 			}
