@@ -542,11 +542,14 @@ namespace Telegram.Messaging.Messaging
 		/// <summary>
 		/// Acquires a lock and make other call block until EndProcessing is called
 		/// </summary>
-		public async Task<bool> StartProcessing()
+		/// <param name="waitMillis">How long to wait for the lock before giving up. Keep it short for callback queries
+		/// (dropping the second tap of a double-tap is wanted: it would execute the action twice), longer for typed
+		/// messages (the user input has no natural retry and would be lost)</param>
+		public async Task<bool> StartProcessing(int waitMillis = 50)
 		{
 			try
 			{
-				bool b = await m.WaitAsync(50);
+				bool b = await m.WaitAsync(waitMillis);
 				return b;
 			}
 			catch
