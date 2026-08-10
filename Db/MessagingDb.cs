@@ -38,8 +38,12 @@ namespace Telegram.Messaging.Db
 		{
 			if (!optionsBuilder.IsConfigured)
 			{
+#if DEBUG
+				// debug builds only: in production these would leak parameter values
+				// (message texts, amounts, usernames) into the logs
 				optionsBuilder.EnableDetailedErrors();
 				optionsBuilder.EnableSensitiveDataLogging();
+#endif
 				string? conn = null;
 				var connString = System.Configuration.ConfigurationManager.ConnectionStrings[DATABASE_NAME];
 				if (connString != null)
