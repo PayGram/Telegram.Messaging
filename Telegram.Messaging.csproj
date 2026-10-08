@@ -1,9 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFrameworks>net6.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <!-- Both frameworks are built until every consumer runs on .NET 10: the net6.0 build keeps exactly the package
+       versions it had, the net10.0 build takes the matching 10.x packages. -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <EfCoreVersion>6.0.36</EfCoreVersion>
+    <MsExtConfigVersion>6.0.2</MsExtConfigVersion>
+    <MsExtConfigFileVersion>6.0.1</MsExtConfigFileVersion>
+    <MsExtConfigJsonVersion>6.0.1</MsExtConfigJsonVersion>
+    <MsExtHostingVersion>6.0.0</MsExtHostingVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <EfCoreVersion>10.0.12</EfCoreVersion>
+    <MsExtConfigVersion>10.0.12</MsExtConfigVersion>
+    <MsExtConfigFileVersion>10.0.12</MsExtConfigFileVersion>
+    <MsExtConfigJsonVersion>10.0.12</MsExtConfigJsonVersion>
+    <MsExtHostingVersion>10.0.12</MsExtHostingVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -16,15 +32,15 @@
 
   <ItemGroup>
     <PackageReference Include="log4net" Version="3.3.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.36" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.36">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="$(EfCoreVersion)">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.36" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="6.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EfCoreVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="$(MsExtConfigVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="$(MsExtConfigFileVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="$(MsExtConfigJsonVersion)" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Telegram.Bot" Version="18.0.0" />
   </ItemGroup>
