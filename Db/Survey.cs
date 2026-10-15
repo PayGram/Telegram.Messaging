@@ -25,6 +25,13 @@ namespace Telegram.Messaging.Db
 		public bool IsCompleted { get; set; }
 		public DateTime CreatedUtc { get; set; }
 		public DateTime LastInteractionUtc { get; set; }
+		/// <summary>
+		/// Json snapshot of the state of the callback handlers of the MessageManager that owns this survey,
+		/// keyed by handler type name. Written by <see cref="Messaging.MessageManager"/> every time the survey is saved and
+		/// restored into a handler when the MessageManager instantiates it, so the handlers survive a restart of the server.
+		/// See <see cref="CallbackHandlers.QuestionAnswerCallbackHandler.GetState"/>.
+		/// </summary>
+		public string? HandlersState { get; set; }
 		public List<Question> Questions { get; set; }
 		[NotMapped]
 		public List<TelegramAnswer> LastAnswers => Questions?.Where(x => x.LastAnswer != null).Select(x => x.LastAnswer!).ToList() ?? new();

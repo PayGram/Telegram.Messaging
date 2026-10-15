@@ -1,6 +1,7 @@
 using log4net;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Web;
 using Telegram.Bot;
@@ -207,7 +208,12 @@ namespace Telegram.Messaging.Messaging
 			//lock (syncHndlrs)
 			//{
 
-			return (QuestionAnswerCallbackHandler)callBackhandlers.GetOrAdd(skey, (s) => Activator.CreateInstance(key, this) as QuestionAnswerCallbackHandler);
+			return (QuestionAnswerCallbackHandler)callBackhandlers.GetOrAdd(skey, (s) =>
+			{
+				var handler = Activator.CreateInstance(key, this) as QuestionAnswerCallbackHandler;
+				restoreHandlerState(skey, handler);
+				return handler;
+			});
 
 			//if (callBackhandlers.ContainsKey(skey)) return callBackhandlers[skey] as QuestionAnswerCallbackHandler;
 
@@ -244,6 +250,8 @@ namespace Telegram.Messaging.Messaging
 
 				if (_target == null)
 					log.Error($"{forAction?.ToString()} | {forAction?.Target?.ToString()}");
+				else
+					restoreHandlerState(skey, _target as QuestionAnswerCallbackHandler);
 
 				return _target;
 			});
@@ -280,6 +288,65 @@ namespace Telegram.Messaging.Messaging
 			//}
 
 			return toret;
+		}
+		/// <summary>
+		/// Gives a just-created handler the state it had saved in the current survey, if any.
+		/// Only the handlers created by this manager go through here, so a handler is restored at most once per instance.
+		/// </summary>
+		void restoreHandlerState(string key, QuestionAnswerCallbackHandler? handler)
+		{
+			if (handler == null) return;
+			string? json = CurrentSurvey?.HandlersState;
+			if (string.IsNullOrWhiteSpace(json)) return;
+			try
+			{
+				var states = JObject.Parse(json);
+				if (states.TryGetValue(key, out JToken? state) && state != null && state.Type != JTokenType.Null)
+				{
+					handler.SetState(state);
+					log.Debug($"{TId}:{UsernameOrFirstName}. Restored state of {key} from survey {CurrentSurvey?.Id}");
+				}
+			}
+			catch (Exception ex)
+			{
+				// a bad state must not break the dashboard: the handler simply starts empty, as it did before states were persisted
+				log.Warn($"{TId}:{UsernameOrFirstName}. Could not restore the state of {key} from survey {CurrentSurvey?.Id}", ex);
+			}
+		}
+		/// <summary>
+		/// Collects the state of every handler created so far into <see cref="Survey.HandlersState"/> of the current survey.
+		/// Handlers returning null from GetState are left out.
+		/// </summary>
+		void collectHandlersState()
+		{
+			if (CurrentSurvey == null) return;
+			if (callBackhandlers.IsEmpty) return;
+
+			var states = new JObject();
+			foreach (var kv in callBackhandlers)
+			{
+				if (kv.Value is not QuestionAnswerCallbackHandler handler) continue;
+				try
+				{
+					object? state = handler.GetState();
+					if (state != null)
+						states[kv.Key] = JToken.FromObject(state);
+				}
+				catch (Exception ex)
+				{
+					log.Warn($"{TId}:{UsernameOrFirstName}. Could not collect the state of {kv.Key}", ex);
+				}
+			}
+			CurrentSurvey.HandlersState = states.HasValues ? states.ToString(Formatting.None) : null;
+		}
+		/// <summary>
+		/// Saves the current survey together with the state of the handlers. Use this instead of CurrentSurvey.UpdateSurvey.
+		/// </summary>
+		async Task saveCurrentSurveyAsync(bool updateQuestions)
+		{
+			if (CurrentSurvey == null) return;
+			collectHandlersState();
+			await CurrentSurvey.UpdateSurvey(updateQuestions);
 		}
 		async Task RaiseOnCommand(CommandReceivedEventArgs e)
 		{
@@ -750,8 +817,8 @@ namespace Telegram.Messaging.Messaging
 					mostRecent?.IsCompleted == true && CurrentSurvey.MostRecentQuestion == mostRecent)
 					await CompleteSurvey();
 
-				if (CurrentSurvey != null) // update the survey, so we update the lastInteractionDate automatically
-					await CurrentSurvey.UpdateSurvey(false);
+				// update the survey, so we update the lastInteractionDate automatically, and persist the handlers state
+				await saveCurrentSurveyAsync(false);
 
 				log.Debug($"{TId}:{UsernameOrFirstName}. MessageManager finished now {DateTime.Now:ss.fff}");
 
@@ -973,7 +1040,7 @@ namespace Telegram.Messaging.Messaging
 			if (defAnswers != null)
 				q.AddDefaultAnswers(defAnswers);
 			CurrentSurvey.Questions.Add(q);
-			await CurrentSurvey.UpdateSurvey(true);
+			await saveCurrentSurveyAsync(true);
 			return q;
 		}
 		/// <summary>
@@ -1061,7 +1128,7 @@ namespace Telegram.Messaging.Messaging
 			question.IsCompleted = false;
 			question.ExpectsCommand = expectsCommand ?? question.ExpectsCommand;
 
-			await CurrentSurvey.UpdateSurvey(true);
+			await saveCurrentSurveyAsync(true);
 			return;
 		}
 
