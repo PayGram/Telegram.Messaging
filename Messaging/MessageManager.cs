@@ -1527,14 +1527,15 @@ namespace Telegram.Messaging.Messaging
 
 			await semSend.WaitAsync();
 
-			if (CurrentMessage == null)
-			{
-				log.Debug($"{this} Current message is null, question: {question}");
-				return null;
-			}
-
 			try
 			{
+				// inside the try: returning here must release semSend too, or every later send of this user would hang
+				if (CurrentMessage == null)
+				{
+					log.Debug($"{this} Current message is null, question: {question}");
+					return null;
+				}
+
 				using var scope = serviceProvider.CreateScope();
 
 				var tClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
