@@ -1553,6 +1553,23 @@ namespace Telegram.Messaging.Messaging
 			}
 		}
 
+		/// <summary>
+		/// Removes the most recent questions of the current survey while <paramref name="drop"/> matches them, the same way Back
+		/// removes one: for questions whose content is no longer true (e.g. a list after the action that emptied it), so that
+		/// Back does not show them again. The first question of the survey is never removed.
+		/// </summary>
+		public async Task DropMostRecentQuestionsAsync(Func<Question, bool> drop)
+		{
+			var questions = CurrentSurvey?.Questions;
+			if (questions == null) return;
+			while (questions.Count > 1 && drop(questions[^1]))
+			{
+				var stale = questions[^1];
+				questions.RemoveAt(questions.Count - 1);
+				await stale.Delete();
+			}
+		}
+
 		public async Task AnswerCurrentCallbackQueryAsync()
 		{
 			using var scope = serviceProvider.CreateScope();
