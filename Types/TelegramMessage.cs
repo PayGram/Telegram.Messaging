@@ -71,11 +71,18 @@ namespace Telegram.Messaging.Types
 			}
 
 			//parms[0]  is this is the command name
+			// a deep link (/start or /start@bot) carries one base64 parameter: there a single name=value pair is a list too.
+			// the other commands keep a lone "x=y" as a positional parameter, it can be the text an admin types
+			string name = parms[0];
+			int iAt = name.IndexOf('@');
+			bool isStart = TelegramCommand.START.Equals(iAt == -1 ? name : name[..iAt], StringComparison.InvariantCultureIgnoreCase);
 			for (int i = 1; i < parms.Length; i++)
 			{
 				var unesc = TelegramCommand.FromBase64(parms[i]); // these are the rest of the parameters separated in an old fashion way name2=val1&name2=value2
 
-				if (unesc.IndexOf(TelegramCommand.PARAMS_AND_SEP) != -1 && unesc.IndexOf(TelegramCommand.PARAMS_EQUAL_SEP) != -1) // this parameter is a list of name&value
+				bool isList = unesc.IndexOf(TelegramCommand.PARAMS_EQUAL_SEP) != -1
+					&& (unesc.IndexOf(TelegramCommand.PARAMS_AND_SEP) != -1 || (isStart && unesc != parms[i]));
+				if (isList) // this parameter is a list of name&value
 					Command.AddParameters(unesc);
 				else
 					Command.AddParameter(i.ToString(), parms[i]); //this is a parameter split by space from the others
