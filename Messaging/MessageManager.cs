@@ -79,6 +79,7 @@ namespace Telegram.Messaging.Messaging
 		public event EventHandler<SurveyCompletedEventArgs> OnSurveyCompleted;
 		public event EventHandler<PayReceivedEventArgs> OnPayPressed;
 		public event EventHandler<InvalidInteractionEventArgs> OnInvalidInteraction;
+		public event EventHandler<ContactSharedEventArgs> OnContactShared;
 		//public event EventHandler<DiceRolledEventArgs> OnDiceRolled;
 
 		public event AsyncEventHandler<CommandReceivedEventArgs> OnCommandAsync;
@@ -89,6 +90,7 @@ namespace Telegram.Messaging.Messaging
 		public event AsyncEventHandler<SurveyCompletedEventArgs> OnSurveyCompletedAsync;
 		public event AsyncEventHandler<PayReceivedEventArgs> OnPayPressedAsync;
 		public event AsyncEventHandler<InvalidInteractionEventArgs> OnInvalidInteractionAsync;
+		public event AsyncEventHandler<ContactSharedEventArgs> OnContactSharedAsync;
 		//public event AsyncEventHandler<DiceRolledEventArgs> OnDiceRolledAsync;
 
 		IServiceProvider serviceProvider;
@@ -142,9 +144,16 @@ namespace Telegram.Messaging.Messaging
 			OnSurveyCompleted += MessageManager_OnSurveyCompleted;
 			OnPayPressed += MessageManager_OnPayPressed;
 			OnInvalidInteraction += MessageManager_OnInvalidInteraction;
+			OnContactShared += MessageManager_OnContactShared;
 		}
 
 		#region events logging
+		private void MessageManager_OnContactShared(object? sender, ContactSharedEventArgs e)
+		{
+			// the phone number is personal data, it is not logged
+			log.Debug($"{TId}:{UsernameOrFirstName}. OnContactShared. ContactUserId: {e.Contact?.UserId}, TelegramMessage: {e.TelegramMessage}");
+		}
+
 		private void MessageManager_OnInvalidInteraction(object? sender, InvalidInteractionEventArgs e)
 		{
 			log.Debug($"{TId}:{UsernameOrFirstName}. OnInvalidInteraction. Answer: {e.Answer}, PickedChoice: {e.PickedChoice?.ToJsonSpecial()}, TelegramMessage: {e.TelegramMessage}");
@@ -577,6 +586,19 @@ namespace Telegram.Messaging.Messaging
 			await Task.WhenAll(tasks);
 		}
 		/// <summary>
+		/// A shared contact does not answer any question: only the global subscribers are notified
+		/// </summary>
+		async Task RaiseOnContactShared(ContactSharedEventArgs e)
+		{
+			e.Manager = this;
+			List<Task> tasks = new List<Task>();
+			if (OnContactShared != null)
+				Array.ForEach(OnContactShared.GetInvocationList(), (d) => configureAndAddTask(tasks, d, e));
+			if (OnContactSharedAsync != null)
+				Array.ForEach(OnContactSharedAsync.GetInvocationList(), (d) => configureAndAddTask(tasks, d, e));
+			await Task.WhenAll(tasks);
+		}
+		/// <summary>
 		/// Adds the task corresponding to the passed delegate to the list of tasks and invokes it
 		/// </summary>
 		/// <param name="tasks">The list of tasks</param>
@@ -719,11 +741,11 @@ namespace Telegram.Messaging.Messaging
 
 			try
 			{
-				// Added by Iddhi, for the contact number verification
-				// Check if the message is contact share?
-				if (CurrentMessage?.Message?.Type == MessageType.Contact)
+				// a shared contact (the phone number verification) is not part of the survey flow:
+				// it is handed to the subscribers and the survey is not loaded
+				if (CurrentMessage.IsContact)
 				{
-					// If it is break from the command process
+					await RaiseOnContactShared(new ContactSharedEventArgs() { TelegramMessage = CurrentMessage, Contact = CurrentMessage.Message.Contact });
 					return CurrentMessage;
 				}
 
