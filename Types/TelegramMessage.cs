@@ -21,6 +21,7 @@ namespace Telegram.Messaging.Types
 		public long ChatId { get => Query?.Message?.Chat?.Id ?? Message?.Chat?.Id ?? 0; }
 		public bool IsDice { get => Message?.Dice != null; }
 		public bool IsPhoto => Message?.Photo != null;
+		public bool IsContact => Message?.Contact != null;
 		/// <summary>
 		/// if the message represents a callback, gets the message id that originated the callback, otherwise 0
 		/// </summary>
